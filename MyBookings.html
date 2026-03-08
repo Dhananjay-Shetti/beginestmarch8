@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>My Bookings</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <style>
+    :root{ --accent:#0b2746; --muted:#6c757d; --bg:#f6f7f9; --hamburger-width: 252px;--content-max-width: 980px;}
+    html,body{ height:100%; margin:0; font-family: system-ui, Roboto; background:url('Background.jpg') no-repeat center center fixed; color:#0b2746; }
+    .app-wrap{ display:flex; min-height:100vh; }
+    .sidebar{ width:260px; background:#fff; border-right:1px solid #eef2f7; padding:28px 20px; }
+    .logo-sm{ height:42px; display:block; margin-bottom:18px; }
+    .nav-item{ display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px; color:#324151; text-decoration:none; margin-bottom:8px; }
+    .nav-item.active{ background:var(--accent); color:#fff; font-weight:600; }
+    .main{ flex:1; padding:22px 28px; }
+    .page-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+    .card-empty { border-radius:12px; padding:48px; background:#fff; box-shadow: 0 6px 18px rgba(22,28,45,0.06); text-align:center; }
+    .btn-accent { background:var(--accent); color:#fff; border:0; border-radius:10px; padding:10px 18px; font-weight:600; }
+    .booking-list { margin-top:18px; display:flex; flex-direction:column; gap:16px; }
+    .booking-card { background:#fff; border-radius:10px; padding:18px; box-shadow:0 6px 18px rgba(22,28,45,0.04); display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+    .booking-meta { color:var(--muted); font-size:0.95rem; margin-top:6px; }
+    .small-muted { color:var(--muted); margin-top:8px; font-size:0.9rem; }
+    .spinner-center { display:flex; align-items:center; justify-content:center; padding:28px; }
+    .date-line { display:flex; align-items:center; gap:8px; color:var(--muted); margin-top:8px; }
+    .time-line { display:flex; align-items:center; gap:8px; color:var(--muted); margin-top:6px; }
+    .cancel-btn { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:8px 14px; font-weight:600; display:inline-flex; align-items:center; gap:8px; }
+    .cancel-btn[disabled]{ opacity:0.7; pointer-events:none; }
+    .tabs { display:flex; gap:12px; margin-bottom:18px; }
+    .tab { padding:10px 18px; border-radius:8px; background:#fff; border:1px solid #eef2f7; cursor:pointer; color:var(--muted); }
+    .tab.active { background:#fff; border:1px solid #e6eefc; color:var(--accent); font-weight:600; box-shadow: 0 2px 8px rgba(11,39,70,0.06); }
+    .amenity-pill{ display:inline-flex; align-items:center; gap:6px; border:1px solid #eef2f7; padding:4px 10px; border-radius:999px; font-size:0.8rem; background:#fff; }
+    @media (max-width: 768px) {
+      .booking-card { flex-direction:column; align-items:stretch; }
+      .booking-right { align-items:flex-start; margin-top:8px; display:flex; gap:8px; }
+    }
+ 
+    /* Hamburger iframe styling */
+    #hamburgerIframe {
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh;
+      width: 0;
+      border: 0;
+      z-index: 10050;
+      background: transparent;
+      transition: width .25s ease, opacity .25s;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #hamburgerOpener {
+      display: flex;
+      background:#fff;
+      box-shadow:0 4px 12px rgba(11,39,70,0.08);
+      cursor:pointer;
+    }
+      .spinner-overlay{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.6); z-index:9999; visibility:hidden; opacity:0; transition:.18s; }
+    .spinner-overlay.show{ visibility:visible; opacity:1; }
+        /* Success overlay */
+    #successOverlay, #errorOverlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10010;
+      background: rgba(255,255,255,0.85);
+    }
+    #successOverlay .panel, #errorOverlay .panel {
+      max-width:420px; margin:auto; background:#fff; border-radius:12px; padding:32px; box-shadow:0 6px 20px rgba(22,28,45,0.08); text-align:center;
+    }
+    #successOverlay .ok-circle { width:64px;height:64px;margin:0 auto 16px;background:#d1fae5;border-radius:50%;display:flex;align-items:center;justify-content:center; }
+    #errorOverlay .ok-circle {width:64px;height:64px;margin:0 auto 16px;background:#ff0000;border-radius:50%;display:flex;align-items:center;justify-content:center; }
+    /* .logo-wrap { width: 140px; height:56px; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; } */
+    .logo-img { width:100%; height:100%; object-fit:cover; display:block; border-radius:8px; }
+    @media (min-width: 900px) {
+        .main {
+    width: 100%;
+    max-width: var(--content-max-width);
+
+    margin-left: calc(
+      var(--hamburger-width) +
+      (100vw - var(--hamburger-width) - var(--content-max-width)) / 2
+    );
+    margin-right: auto;
+
+    padding: 22px 28px;
+  }
+
+  #hamburgerIframe {
+    width: 360px !important;
+    opacity: 1 !important;
+    pointer-events: auto;
+  }
+
+  #hamburgerOpener { display: none; }
+    }
+
+    @media (max-width: 899px) {
+      #hamburgerIframe { width:0; opacity:0; pointer-events:none; }
+      #hamburgerOpener { display:flex; }
+        .main {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+      .close-btn { display: block !important; }
+    }
+      @media (max-width: 420px) {
+    /* .logo-wrap { width: 140px; height:56px; } */
+  }
+  .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(11,39,70,0.7);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .22s ease;
+      z-index: 10045; /* below iframe (10050) and opener (10060) */
+    }
+    .overlay.visible { opacity: 1; pointer-events: auto; }
+
+  </style>
+</head>
+<body>
+    <!-- Hamburger Menu Integration -->
+  <div id="hamburgerOpener" aria-label="Open menu">
+        <div class="logo-wrap" style="width: 56px;">
+          <img src="favicon.png" class="logo-img" alt="logo" onerror="this.style.display='none'">
+        </div>
+  </div>
+
+  <!-- iframe loads your Hamburger UI -->
+  <iframe id="hamburgerIframe" src="Hamburger.html" title="Navigation" aria-hidden="true"></iframe>
+
+  <div id="overlay" class="overlay" aria-hidden="true"></div>
+  <div class="app-wrap">
+    <main class="main">
+      <div class="page-head">
+        <div>
+          <h2 style="margin:0 0 6px 0;">My Bookings</h2>
+          <div style="color:var(--muted)">Manage your meeting room reservations</div>
+        </div>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Booking tabs">
+        <div class="tab active" data-tab="upcoming">Upcoming</div>
+        <div class="tab" data-tab="past">Past</div>
+        
+      </div>
+
+      <div id="contentArea">
+        <div id="loaderArea" class="spinner-center" style="display:none;"><div class="spinner-border text-secondary"></div></div>
+
+        <div id="emptyArea" class="card-empty" style="display:none;">
+          <div style="font-size:48px; color:#c6d3e7;"><i class="far fa-calendar"></i></div>
+          <h4 style="margin-top:18px; margin-bottom:6px;">No bookings found</h4>
+          <div style="color:var(--muted); margin-bottom:18px;">Click on Book Meeting Room to get started</div>
+          <button id="btnBookNow" class="btn-accent">Book Meeting Room</button>
+        </div>
+
+        <div id="listArea" style="display:none;">
+          <div class="booking-list" id="bookingList"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <div id="spinnerOverlay" class="spinner-overlay"><div class="spinner-border text-secondary"></div></div>
+
+  <!-- Success / Error overlays -->
+  <div id="successOverlay" style="display:none;">
+    <div class="panel">
+      <div class="ok-circle"><i class="fas fa-check" style="font-size:28px;color:#059669;"></i></div>
+      <h4 style="color:#0b2746;font-weight:700;">Booking Cancelled!</h4>
+      <p class="text-muted">Your meeting room has been cancelled successfully.<br/>We've added the tokens back to your account.</p>
+    </div>
+  </div>
+
+  <script>
+    // CONFIG: put your Apps Script web app URL here
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbwe8AIxQwxnOVs-aMZPTeO5seoJC-b_CUiMfN_Ad40sZipUYvc9dyVMbzYZbTtYyJgG/exec"; // <-- replace with your URL
+    const PAST_DAYS = 15; // change here to pass a different pastDays value (10, 15, 30, etc.)
+
+    const whatsappKey = 'whatsappNumber';
+    const w = localStorage.getItem(whatsappKey);
+    const jsonStr = localStorage.getItem('customerInfo');
+    let custInfo = {};
+    try { if (jsonStr) custInfo = JSON.parse(jsonStr); } catch(e){ custInfo = {}; }
+
+    const tabs = document.querySelectorAll('.tab');
+    const loaderArea = document.getElementById('loaderArea');
+    const emptyArea = document.getElementById('emptyArea');
+    const listArea = document.getElementById('listArea');
+    const bookingList = document.getElementById('bookingList');
+    const btnBookNow = document.getElementById('btnBookNow');
+    //const navBrowse = document.getElementById('navBrowse');
+    const hamburgerIframe = document.getElementById('hamburgerIframe');
+    const hamburgerOpener = document.getElementById('hamburgerOpener');
+    const overlay = document.getElementById('overlay');
+
+    const spinnerOverlay = document.getElementById('spinnerOverlay');
+     const successOverlay = document.getElementById('successOverlay');
+    btnBookNow.addEventListener('click', goToRooms);
+    //navBrowse.addEventListener('click', function(e){ e.preventDefault(); goToRooms(); });
+
+       function showSpinner(on) { spinnerOverlay.classList[on ? 'add' : 'remove']('show'); }
+    function goToRooms() {
+      if (window.parent && window.parent !== window) window.parent.postMessage({ action:'gotoRooms' }, '*');
+      else window.location.href = 'MeetingRoomList.html';
+    }
+
+    tabs.forEach(t => t.addEventListener('click', function(){
+      tabs.forEach(x=>x.classList.remove('active'));
+      this.classList.add('active');
+      loadAndRenderBookings();
+    }));
+
+    function parseTimeslot(timeslot) {
+      // expected like "2025-09-15 15:00 to 17:00"
+      if (!timeslot) return null;
+      const parts = timeslot.split(' ');
+      const date = parts[0];
+      const times = timeslot.match(/(\d{1,2}:\d{2})/g) || [];
+      const start = times[0] || '';
+      const end = times[1] || '';
+      return { date, start, end };
+    }
+
+    function isPast(timeslotObj) {
+      if (!timeslotObj) return false;
+      const dt = new Date(timeslotObj.date + 'T' + timeslotObj.end + ':00');
+      return dt < new Date();
+    }
+
+    function isWithinLastNDays(timeslotObj, n) {
+      if (!timeslotObj) return false;
+      const dt = new Date(timeslotObj.date + 'T' + timeslotObj.end + ':00');
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - n);
+      return dt >= cutoff;
+    }
+
+    function showLoader(on) {
+      loaderArea.style.display = on ? 'flex' : 'none';
+      if (on) {
+        emptyArea.style.display = 'none';
+        listArea.style.display = 'none';
+      }
+    }
+
+    // Combined fetch: calls getBookingsByWhatsappCombined and falls back if endpoint missing.
+    async function fetchCombinedBookings() {
+      if (!w) return { upcoming: [], past30: [] };
+      // primary attempt: combined endpoint with pastDays param
+      try {
+        const url = `${scriptUrl}?action=getBookingsByWhatsappCombined&whatsapp=${encodeURIComponent(w)}&pastDays=${encodeURIComponent(PAST_DAYS)}`;
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('Network');
+        const j = await r.json();
+        if (j && (Array.isArray(j.upcoming) || Array.isArray(j.past30))) {
+          // ensure arrays exist
+          return { upcoming: j.upcoming || [], past30: j.past30 || [] };
+        }
+      } catch (e) {
+        // ignore: fallback below
+      }
+
+      // fallback: older per-whatsapp endpoint and client-side split
+      try {
+        const fallback = await fetch(`${scriptUrl}?action=getBookingsByWhatsapp&whatsapp=${encodeURIComponent(w)}`)
+          .then(r => r.json())
+          .then(j => j.bookings || []);
+        const upcoming = [], past30 = [];
+        for (const rec of fallback) {
+          const ts = parseTimeslot(rec.BookedTimeslot);
+          if (!ts) continue;
+          if (isPast(ts)) {
+            if (isWithinLastNDays(ts, PAST_DAYS)) past30.push(rec);
+          } else {
+            upcoming.push(rec);
+          }
+        }
+        return { upcoming, past30 };
+      } catch (e) {
+        return { upcoming: [], past30: [] };
+      }
+    }
+
+    async function loadAndRenderBookings() {
+      if (!w) {
+        if (window.parent && window.parent !== window) window.parent.postMessage({ action:'gotoRegister' }, '*');
+        else location.href = 'register.html';
+        return;
+      }
+
+      showLoader(true);
+      try {
+        const result = await fetchCombinedBookings();
+        const activeTab = document.querySelector('.tab.active').dataset.tab;
+        let toRender = (activeTab === 'upcoming') ? (result.upcoming || []) : (result.past30 || []);
+
+        renderBookings(toRender, activeTab);
+
+        if (activeTab === 'upcoming' && (!toRender || toRender.length === 0)) {
+          emptyArea.style.display = 'block';
+          listArea.style.display = 'none';
+        }
+      } catch (err) {
+        bookingList.innerHTML = `<div class="alert alert-warning">Failed to load bookings: ${err.message}</div>`;
+        listArea.style.display = 'block';
+        emptyArea.style.display = 'none';
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    function formatDateHuman(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    }
+    function formatTimeHuman(dateStr, timeStr) {
+      if (!timeStr) return '';
+      const d = new Date(dateStr + 'T' + timeStr + ':00');
+      return d.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
+    }
+
+    function renderBookings(bookings, activeTab) {
+      bookingList.innerHTML = '';
+      if (!bookings || bookings.length === 0) {
+        // caller will handle empty display
+        return;
+      }
+
+      emptyArea.style.display = 'none';
+      listArea.style.display = 'block';
+
+      // sort ascending by start datetime
+      bookings.sort((a,b) => {
+        const pa = parseTimeslot(a.BookedTimeslot);
+        const pb = parseTimeslot(b.BookedTimeslot);
+        if (!pa || !pb) return 0;
+        return new Date(pa.date + 'T' + pa.start + ':00') - new Date(pb.date + 'T' + pb.start + ':00');
+      });
+      const cachedRoomsUpdated = getRoomsFromLocalStorage(custInfo.Harbor);
+      const mapping = [
+            { key: 'wifi', label: 'WiFi', icon: 'fa-wifi' },
+            { key: 'naturalLight', label: 'Natural Light', icon: 'fa-sun' },
+            { key: 'airConditioning', label: 'Air Conditioning', icon: 'fa-fan' },
+            { key: 'projector', label: 'Projector', icon: 'fa-tv' },
+            { key: 'whiteboard', label: 'Whiteboard', icon: 'fa-chalkboard' },
+            { key: 'videoConference', label: 'Video Conf', icon: 'fa-video' }
+      ];
+      function findRoomByName(rooms, meetingRoomName) {
+        if (!Array.isArray(rooms) || !meetingRoomName) return null;
+        return rooms.find(r =>
+          String(r.MeetingRoom || r.name || '').trim() === String(meetingRoomName).trim()
+        ) || null;
+      }
+
+      for (const b of bookings) {
+        const ts = parseTimeslot(b.BookedTimeslot) || {};
+        const companyName = (custInfo && custInfo["Company Name"]) || b["Company Name"] || '';
+        const designation = (custInfo && custInfo.Designation) || b.Designation || '';
+
+        const dateStr = ts.date ? formatDateHuman(ts.date) : '';
+        const startStr = (ts.date && ts.start) ? formatTimeHuman(ts.date, ts.start) : '';
+        const endStr = (ts.date && ts.end) ? formatTimeHuman(ts.date, ts.end) : '';
+
+        // find room metadata from cached rooms
+        const rm = findRoomByName(cachedRoomsUpdated, b.MeetingRoom);
+
+        // fallback-safe values
+        const floor = rm && rm.floor ? rm.floor : '';
+        const people = rm && rm.people ? rm.people : '';
+        const description = rm && rm.description ? rm.description : '';
+
+        let amenitiesHtml = '';
+
+        // if room has amenities object, build dynamically
+        if (rm && rm.amenities) {
+          amenitiesHtml = mapping
+          .filter(m => rm.amenities[m.key])
+          .map(m =>
+            `<span class="amenity-pill">
+            <i class="fas ${m.icon}"></i> ${m.label}
+            </span>`
+          )
+        .join('');
+        }
+
+        const card = document.createElement('div');
+        card.className = 'booking-card';
+        card.dataset.bookingId = b.ID || '';
+
+        const left = document.createElement('div');
+        left.style.flex = '1';
+        left.innerHTML = `
+          <div style="font-weight:600; font-size:1rem;">${b.MeetingRoom || ''}</div>
+          <div class="meta-line">${floor} • ${people}</div>
+          <p class="small text-muted">${description}</p>
+
+          <div class="amenities" style="margin-bottom:30px;">
+            ${amenitiesHtml}
+          </div>
+
+          <div class="date-line"><i class="far fa-calendar-alt"></i> <div>${dateStr}</div></div>
+          <div class="time-line"><i class="far fa-clock"></i> <div>${startStr} to ${endStr}</div></div>
+          <div class="small-muted">${b.FirstName||''} ${b.LastName||''} • ${companyName||''} • ${designation||''}</div>
+        `;
+
+        const rightWrap = document.createElement('div');
+        rightWrap.className = 'booking-right';
+        rightWrap.style.display = 'flex';
+        rightWrap.style.flexDirection = 'column';
+        rightWrap.style.alignItems = 'flex-end';
+        rightWrap.style.gap = '10px';
+
+        // Only show Cancel for non-past bookings
+        const past = isPast(ts);
+        if (!past) {
+          const cancelBtn = document.createElement('button');
+          cancelBtn.className = 'cancel-btn';
+          cancelBtn.type = 'button';
+          cancelBtn.innerHTML = '<span>Cancel Booking</span>';
+
+          cancelBtn.addEventListener('click', function () {
+            const bookingId = b.ID || '';
+            if (!bookingId) {
+              alert('Booking ID missing, cannot cancel.');
+              return;
+            }
+            if (!confirm('Are you sure you want to cancel this booking?')) return;
+
+            // UX: show spinner in button and disable
+            cancelBtn.disabled = true;
+            const orig = cancelBtn.innerHTML;
+            cancelBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="color:#ffffff;"></span><span style="margin-left:8px">Cancelling…</span>`;
+
+            // POST to cancel endpoint (supports GET/POST in Code.gs)
+            const body = `action=cancelBooking&id=${encodeURIComponent(bookingId)}`;
+            fetch(scriptUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: body
+            })
+              .then(r => r.json())
+              .then(json => {
+                if (json && json.success) {
+                  // remove card
+                  card.remove();
+                  // if no upcoming remain -> show empty
+                  if (document.querySelector('.tab.active').dataset.tab === 'upcoming' && bookingList.children.length === 0) {
+                    emptyArea.style.display = 'block';
+                    listArea.style.display = 'none';
+                  }
+                  successOverlay.style.display = 'flex';
+                  // small success notice
+                  //const tmp = document.createElement('div');
+                  //tmp.innerHTML = `<div class="alert alert-success">Booking cancelled.</div>`;
+                  //document.body.prepend(tmp);
+                  setTimeout(()=> {
+                    successOverlay.style.display = 'none';
+                  }, 4000);
+
+                  // After cancellation, refresh credits display (since backend refunds credits on cancel)
+                  // Ask hamburger iframe to refresh the credits (safe and centralised)
+                  setTimeout(() => {
+                    try { postToIframe({ type: 'hamburger-refresh-credits' }); }
+                    catch(e) { console.warn('postToIframe failed', e); }
+                  }, 800);
+                } else {
+                  alert('Failed to cancel booking: ' + (json && json.error ? json.error : 'Unknown error'));
+                  cancelBtn.disabled = false;
+                  cancelBtn.innerHTML = orig;
+                }
+              })
+              .catch(err => {
+                alert('Network error: ' + err.message);
+                cancelBtn.disabled = false;
+                cancelBtn.innerHTML = orig;
+              });
+          });
+
+          rightWrap.appendChild(cancelBtn);
+        } else {
+          // past booking: do not show cancel button
+        }
+
+        card.appendChild(left);
+        card.appendChild(rightWrap);
+        bookingList.appendChild(card);
+      }
+    }
+
+    // init
+    (function(){
+
+      const harbor = custInfo && custInfo.Harbor;
+
+      if (harbor) {
+        const cachedRooms = getRoomsFromLocalStorage(harbor);
+
+        if (!cachedRooms) {
+          fetchRooms(harbor);
+        }
+      }
+      // default: Upcoming tab active
+      loadAndRenderBookings();
+    })();
+
+    function getRoomsFromLocalStorage(harbor) {
+      try {
+        const raw = localStorage.getItem('roomsByHarbor');
+        if (!raw) return null;
+
+        const parsed = JSON.parse(raw);
+        if (!parsed || parsed.harbor !== harbor || !Array.isArray(parsed.rooms)) {
+          return null;
+        }
+
+        return parsed.rooms;
+      } catch (e) {
+        console.warn('Invalid rooms cache', e);
+      return null;
+      }
+    }
+
+    function fetchRooms(harbor) {
+      showLoader(true);
+
+    fetch(`${scriptUrl}?action=getRoomsByHarbor&harbor=${encodeURIComponent(harbor)}`)
+    .then(r => r.json())
+    .then(resp => {
+      showLoader(false);
+
+      const rooms = (resp && resp.rooms) ? resp.rooms : [];
+      try {
+        localStorage.setItem(
+          'roomsByHarbor',
+          JSON.stringify({
+            harbor: harbor,
+            rooms: rooms,
+            savedAt: Date.now()
+          })
+        );
+      } catch (e) {
+        console.warn('Failed to save rooms to localStorage', e);
+      }
+    })
+    .catch(err => {
+      showLoader(false);
+    });
+    }
+
+
+       // --- Messaging helpers ---
+    function postToIframe(msg) {
+      try {
+        if (hamburgerIframe && hamburgerIframe.contentWindow) {
+          hamburgerIframe.contentWindow.postMessage(msg, '*');
+        }
+      } catch (e) {
+        // ignore if iframe not ready
+        console.warn('postToIframe failed', e);
+      }
+    }
+
+    // --- Hamburger Controls ---
+    // On mobile: we expand iframe to 70vw and request the iframe to show its internal drawer + close button
+    function openHamburger() {
+      if (window.innerWidth < 900) {
+        hamburgerIframe.style.width = '70vw';
+        hamburgerIframe.style.opacity = '1';
+        hamburgerIframe.style.pointerEvents = 'auto';
+        if (overlay) overlay.classList.add('visible');
+        // ask iframe to show its panel and show close button (mobile)
+        postToIframe({ type: 'panel-show', showClose: true, active: 'mybookings' });
+      } else {
+        // Desktop: expand as persistent sidebar
+        hamburgerIframe.style.width = '360px';
+        hamburgerIframe.style.opacity = '1';
+        hamburgerIframe.style.pointerEvents = 'auto';
+        // tell iframe to prepare as a sidebar (no close button)
+        postToIframe({ type: 'panel-show', showClose: false, active: 'browse' });
+        // shift main content margin (CSS media also does this but keep in sync)
+        //document.querySelector('.main').style.marginLeft = '250px';
+      }
+    }
+
+    // Close/hide behavior (mobile overlay or collapse desktop)
+    function closeHamburger() {
+      // ask iframe to hide/animate away
+      postToIframe({ type: 'panel-hide' });
+      // hide visually in parent
+      hamburgerIframe.style.width = '0';
+      hamburgerIframe.style.opacity = '0';
+      hamburgerIframe.style.pointerEvents = 'none';
+      if (overlay) overlay.classList.remove('visible');
+      // remove left margin when collapsed
+      if (window.innerWidth >= 900) {
+        document.querySelector('.main').style.marginLeft = '';
+      }
+    }
+
+    // Toggle behavior: opener toggles state depending on viewport
+    hamburgerOpener.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      // if currently visible (width > 50) then close; else open
+      const curW = parseInt(getComputedStyle(hamburgerIframe).width || '0', 10);
+      if (window.innerWidth < 900) {
+        // Mobile: always open overlay
+        openHamburger();
+      } else {
+        // Desktop: toggle persistent sidebar
+        if (curW > 50) {
+          // currently open => collapse
+          closeHamburger();
+        } else {
+          openHamburger();
+        }
+      }
+    });
+
+    // Listen for messages from the iframe (Hamburger.html)
+   // ---------- Replace the message handler with this robust version ----------
+window.addEventListener('message', (e) => {
+  const d = (e && e.data) ? e.data : {};
+  if (!d) return;
+
+  // Unified names
+  const kind = d.type || d.action || '';
+
+    if (d && d.type === 'hamburger-request-parent-width') {
+    e.source.postMessage({ type: 'hamburger-parent-width', width: window.innerWidth }, '*');
+  }
+
+  // Parent/iframe asked to hide/close
+  if (kind === 'hamburger-close' || kind === 'panel-hide' || kind === 'hamburger-close-parent' || kind === 'hamburger-closed-by-outside-click') {
+    // close only on mobile (desktop keeps persistent sidebar open)
+    if (window.innerWidth < 900) closeHamburger();
+    return;
+  }
+
+  // Navigation requested by iframe (either {type:'hamburger-navigate', href:..., action:...} or older shape)
+  if (kind === 'hamburger-navigate') {
+    // derive href (normalize older action-based messages)
+    let href = d.href || null;
+    if (!href && d.action) {
+      if (d.action === 'browse') href = 'MeetingRoomList.html';
+      else if (d.action === 'mybookings') href = 'MyBookings.html';
+      else if (d.action === 'book') href = 'MeetingRoomLandingPage.html';
+    }
+
+    // If target page is the same as current -> DO NOT reload (prevents flicker)
+    const current = window.location.pathname.split('/').pop() || '';
+    const target = href ? href.split('/').pop() : null;
+    if (target && target === current) {
+      // same page: keep sidebar state for desktop; for mobile, close it.
+      if (window.innerWidth < 900) closeHamburger();
+      // also set active nav on iframe if requested (no navigation)
+      try { if (hamburgerIframe && hamburgerIframe.contentWindow) hamburgerIframe.contentWindow.postMessage({ type:'panel-show', showClose: window.innerWidth < 900, active: d.action || 'browse' }, '*'); } catch(e) {}
+      return;
+    }
+
+    // otherwise navigate (close on mobile)
+    if (window.innerWidth < 900) closeHamburger();
+    setTimeout(() => { if (href) window.location.href = href; }, 120);
+    return;
+  }
+
+  // logout message
+  if (d.type === 'hamburger-logout') {
+    //try { localStorage.removeItem('customerInfo'); localStorage.removeItem('whatsappNumber'); } catch (e) {}
+    closeHamburger();
+    //window.location.href = 'register.html';
+    return;
+  }
+
+  // iframe reports credits or ready state
+  if (d.type === 'hamburger-credits') {
+    // expose globally for other code that checks companyCreditsRemaining
+    window.companyCreditsRemaining = d.remaining;
+    // optionally re-render UI based on credits
+  }
+
+  if (d.type === 'hamburger-ready') {
+    // when iframe is ready, send initial context (user/company/harbor and whether to show close btn)
+    try {
+      const cust = JSON.parse(localStorage.getItem('customerInfo') || '{}');
+      const name = cust && (cust['First Name'] || cust['Name']) ? `${(cust['First Name']||cust['Name'])}${cust['Last Name']?(' '+cust['Last Name']):''}` : '';
+      const wantClose = window.innerWidth < 900;
+      // send user and panel-show with correct close preference
+      if (hamburgerIframe && hamburgerIframe.contentWindow) {
+        hamburgerIframe.contentWindow.postMessage({ type:'hamburger-setUser', name: name, company: (cust && (cust['Company Name']||cust.company))||'', harbor: (cust && cust.Harbor) || '' }, '*');
+        hamburgerIframe.contentWindow.postMessage({ type:'panel-show', showClose: wantClose, active: 'browse' }, '*');
+      }
+    } catch (ee) { /* ignore */ }
+  }
+});
+
+    // When iframe element finishes loading, ping it to refresh content
+    // hamburgerIframe.addEventListener('load', () => {
+    //   try {
+    //     const wantClose = window.innerWidth < 900;
+    //     postToIframe({ type: 'hamburger-open' });
+    //     postToIframe({ type: 'panel-show', showClose: wantClose, active: 'browse' });
+    //   } catch (e) {}
+    // });
+
+    hamburgerIframe.addEventListener('load', () => {
+  try {
+    const wantClose = window.innerWidth < 900;
+
+    // compute what nav should be active based on current parent URL/path
+    let activeNav = '';
+    try {
+      const href = (window.location && window.location.href) ? window.location.href : '';
+      if (href.indexOf('MyBookings') !== -1 || href.toLowerCase().indexOf('mybookings') !== -1) activeNav = 'mybookings';
+      else if (href.indexOf('MeetingRoomList') !== -1 || href.toLowerCase().indexOf('meetingroomlist') !== -1) activeNav = 'browse';
+      else if (href.indexOf('MeetingRoomLandingPage') !== -1 || href.toLowerCase().indexOf('meetingroomlandingpage') !== -1) activeNav = 'browse';
+      // otherwise leave '' and iframe will choose default
+    } catch (e) { activeNav = ''; }
+
+    // tell iframe to open/refresh and which nav should be active
+    postToIframe({ type: 'hamburger-open' });
+    postToIframe({ type: 'panel-show', showClose: wantClose, active: activeNav });
+  } catch (e) {}
+});
+
+
+    // Ensure proper sidebar state on resize
+    function ensureSidebarOnResize() {
+      if (window.innerWidth >= 900) {
+        // ensure iframe visible as sidebar
+        hamburgerIframe.style.width = '360px';
+        hamburgerIframe.style.opacity = '1';
+        hamburgerIframe.style.pointerEvents = 'auto';
+        //document.querySelector('.main').style.marginLeft = '250px';
+        // tell iframe to hide its close button (desktop)
+        postToIframe({ type: 'panel-show', showClose: false });
+      } else {
+        // hide for mobile by default
+        hamburgerIframe.style.width = '0';
+        hamburgerIframe.style.opacity = '0';
+        hamburgerIframe.style.pointerEvents = 'none';
+        document.querySelector('.main').style.marginLeft = '';
+        // instruct iframe to use close button when opened on mobile
+        postToIframe({ type: 'panel-hide' });
+      }
+    }
+    window.addEventListener('resize', ensureSidebarOnResize);
+    // initial state
+    ensureSidebarOnResize();
+
+    document.addEventListener('pointerdown', (ev) => {
+    try {
+      // Only apply outside-click close logic for mobile (<900px)
+      if (window.innerWidth >= 900) return;
+
+      const curW = parseInt(getComputedStyle(hamburgerIframe).width || '0', 10);
+      const isOpen = hamburgerIframe.style.pointerEvents === 'auto' && curW > 50;
+      if (!isOpen) return;
+
+      if (ev.target && ev.target.closest && ev.target.closest('#hamburgerOpener')) return;
+
+      closeHamburger();
+    } catch (e) {
+      // swallow errors silently
+    }
+    }, { passive: true });
+
+
+    // clicking the overlay should close the hamburger (mobile)
+    if (overlay) {
+      overlay.addEventListener('click', (ev) => {
+        try { closeHamburger(); } catch (e) {}
+      });
+    }
+  </script>
+</body>
+</html>

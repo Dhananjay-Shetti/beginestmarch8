@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Beginest Portal</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <style>
+    :root{ --accent:#0b2746; }
+    body{ margin:0; font-family: system-ui, Roboto; background: url('Background.jpg') no-repeat center center fixed; overflow: hidden;}
+    header{ background:var(--accent); color:#fff; padding:14px 20px; }
+    .logo-img{ height:44px; margin-right:12px; border-radius:6px; }
+    .brand{ font-weight:700; }
+    .customer-info{ text-align:right; margin-right:10px; }
+    .customer-info .name{ font-weight:600; }
+    .customer-info .meta{ font-size:0.85rem; color:#ddd; }
+    .btn-logout{ border-radius:12px; background:#fff; color:var(--accent); padding:6px 12px; }
+    .main-iframe{ border:0; width:100%; height:calc(100vh - 72px); background:transparent; }
+
+    /* Spinner overlay shown while checking login / loading content */
+    .spinner-overlay{
+      position:fixed;
+      inset:72px 0 0 0; /* below header */
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: url('Background.jpg') no-repeat center center fixed;
+      z-index:9999;
+      visibility:hidden;
+      opacity:0;
+      transition: opacity .12s ease, visibility .12s ease;
+    }
+    .spinner-overlay.show{ visibility:visible; opacity:1; }
+    .spinner-card {
+      background: #fff;
+      padding: 18px 22px;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(11,39,70,0.08);
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .spinner-card .text { color: var(--accent); font-weight:600; }
+  </style>
+</head>
+<body>
+  <header id="topHeader">
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center">
+        <img src="1682591259288.jpeg" class="logo-img" alt="logo" onerror="this.style.display='none'">
+        <div>
+          <div class="brand">Beginest Meeting Rooms</div>
+          <div class="small">Book meeting rooms in your harbor</div>
+        </div>
+      </div>
+      <div class="d-flex align-items-center">
+        <div id="customerInfo" class="customer-info" style="display:none;">
+          <div class="name" id="ciName"></div>
+          <div class="meta" id="ciMeta"></div>
+        </div>
+        <button id="logoutBtn" class="btn-logout" style="display:none;">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- iframe content area -->
+  <iframe id="contentFrame" class="main-iframe" src="about:blank" title="Main content"></iframe>
+
+  <!-- Spinner overlay (shown while verifying login / fetching customer before navigating iframe) -->
+  <div id="spinnerOverlay" class="spinner-overlay">
+    <div class="spinner-card">
+      <div class="spinner-border text-secondary" role="status" aria-hidden="true"></div>
+      <div class="text">Loading your portal…</div>
+    </div>
+  </div>
+
+  <script>
+    const whatsappKey = 'whatsappNumber';
+    const whatsappSetKey = 'whatsappSetAt';
+    const iframe = document.getElementById('contentFrame');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const customerInfoDiv = document.getElementById('customerInfo');
+    const ciName = document.getElementById('ciName');
+    const ciMeta = document.getElementById('ciMeta');
+    const spinnerOverlay = document.getElementById('spinnerOverlay');
+
+    // Replace with your deployed script URL
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbwe8AIxQwxnOVs-aMZPTeO5seoJC-b_CUiMfN_Ad40sZipUYvc9dyVMbzYZbTtYyJgG/exec';
+
+    (function(){
+  // hide header when logged-in
+  const isLogged = !!localStorage.getItem('whatsappNumber');
+  const header = document.getElementById('topHeader');
+  if (isLogged && header) {
+    header.style.display = 'none';
+    // if you have a main-iframe element that should fill the viewport
+    const mainFrame = document.querySelector('.main-iframe');
+    if (mainFrame) mainFrame.style.height = 'calc(100vh)';
+  }
+})();
+
+    function showSpinner(flag){
+      if(flag) spinnerOverlay.classList.add('show');
+      else spinnerOverlay.classList.remove('show');
+    }
+
+    function loadPage(url){
+      // set iframe src only when we want to navigate
+      iframe.src = url;
+    }
+
+    function clearAuth(){
+      localStorage.removeItem(whatsappKey);
+      localStorage.removeItem(whatsappSetKey);
+      customerInfoDiv.style.display = 'none';
+      let tH = document.getElementById('topHeader');
+      tH.style.display = 'block';
+      const mainFrame = document.querySelector('.main-iframe');
+      if (mainFrame) mainFrame.style.height = 'calc(100vh - 72px)';
+      logoutBtn.style.display = 'none';
+      // navigate to register page
+      loadPage('register.html');
+    }
+
+    function setTS(){
+      if(!localStorage.getItem(whatsappSetKey)) localStorage.setItem(whatsappSetKey, Date.now().toString());
+    }
+
+    function showCustomer(c){
+      ciName.textContent = 'Welcome, ' + (c['First Name']||'') + ' ' + (c['Last Name']||'');
+      ciMeta.textContent = (c['Company Name']||'') + ' • ' + (c.Harbor||'');
+      customerInfoDiv.style.display = 'block';
+    }
+
+    // Initialization: if logged in, validate session silently and show spinner.
+    (function init(){
+      const w = localStorage.getItem(whatsappKey);
+      if (!w) {
+        // not logged in -> direct to register
+        loadPage('register.html');
+        return;
+      }
+
+      // Show spinner while we validate and fetch customer (do not show register page)
+      showSpinner(true);
+      setTS();
+
+      // Auto-logout if more than 24 hours
+      try {
+        const ts = parseInt(localStorage.getItem(whatsappSetKey));
+        if (!isNaN(ts) && (Date.now() - ts) > 86400000) {
+          // expired -> clear and go to register
+          clearAuth();
+          showSpinner(false);
+          return;
+        }
+      } catch (e) {
+        // ignore parsing errors
+      }
+
+      // Fetch customer details to display in header, then navigate iframe to MeetingRoomList.
+      fetch(`${scriptUrl}?action=getCustomerDetails&whatsappNumber=${encodeURIComponent(w)}`)
+        .then(r => r.json())
+        .then(resp => {
+          if (resp && resp.customer) {
+            showCustomer(resp.customer);
+            logoutBtn.style.display = 'inline-block';
+            // load meeting room list into iframe
+            loadPage('MeetingRoomLandingPage.html');
+          } else {
+            // not a customer (or no data) -> force register
+            clearAuth();
+          }
+        })
+        .catch(err => {
+          // network or other error: best effort - still navigate to meeting room list so user can retry login/register
+          console.error('Failed to fetch customer details:', err);
+          // fallback: go to register page (you can change to MeetingRoomList if you prefer)
+          loadPage('register.html');
+        })
+        .finally(() => {
+          showSpinner(false);
+        });
+    })();
+
+    // Logout button handler
+    logoutBtn.addEventListener('click', () => {
+      clearAuth();
+    });
+
+    // Listen to messages from iframe pages
+    window.addEventListener('message', function(event) {
+      const data = event.data || {};
+      if (data.action === 'gotoRooms') {
+        loadPage('MeetingRoomLandingPage.html');
+      }
+      if (data.action === 'gotoLanding' && data.room) {
+        const url = 'MeetingRoomLandingPage.html?room=' + encodeURIComponent(data.room) + '&harbor=' + encodeURIComponent(data.harbor || '');
+        loadPage(url);
+      }
+      if (data.action === 'gotoRegister' || data.action === 'hamburger-logout') {
+        clearAuth();
+      }
+      if (data.action === 'gotoMyBookings') {
+        loadPage('MyBookings.html');
+      }
+      if (data.action === 'loginSuccess' && data.customer) {
+        // login just happened inside iframe — set timestamp, show header & logout
+        if (!localStorage.getItem(whatsappSetKey)) localStorage.setItem(whatsappSetKey, Date.now().toString());
+        let tH = document.getElementById('topHeader');
+        tH.style.display = 'none';
+        const mainFrame = document.querySelector('.main-iframe');
+        if (mainFrame) mainFrame.style.height = 'calc(100vh)';
+        //logoutBtn.style.display = 'inline-block';
+        showCustomer(data.customer);
+      }
+    }, false);
+  </script>
+</body>
+</html>

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Meeting Rooms</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+  <style>
+    :root { --accent:#0b2746; --muted:#6c757d; --bg:#f6f7f9; }
+
+    html,body { height:100%; margin:0; font-family: system-ui, Roboto; background:var(--bg); color:#0b2746; }
+
+    .main { flex:1; padding:22px 28px; transition: margin-left .3s ease; }
+    .page-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+    .room-card { border-radius:12px; box-shadow: 0 6px 18px rgba(22,28,45,0.06); margin-bottom:18px; background:#fff; display:flex; flex-direction:column; height:100%; }
+    .room-img { height:180px; object-fit:cover; width:100%; border-top-left-radius:12px; border-top-right-radius:12px; }
+    .card-body { display:flex; flex-direction:column; flex-grow:1; padding:16px; }
+    .meta-line { color:var(--muted); font-size:0.9rem; margin-top:6px; }
+    .amen-pill { display:inline-flex; gap:6px; align-items:center; border-radius:999px; padding:6px 10px; border:1px solid #eef2f7; margin:4px; font-size:0.85rem; background:#fff; }
+    .amenities-area { margin-top:12px; display:flex; flex-wrap:wrap; }
+    .book-btn {
+      background:var(--accent); color:#fff; border:0; border-radius:10px;
+      padding:10px 18px; font-weight:600; width:160px;
+    }
+    .book-btn.disabled, .book-btn:disabled {
+      background:#cbd5e1 !important; color:#6b7280 !important;
+      cursor:not-allowed !important; opacity:0.7;
+    }
+
+    #roomsRow > .col { display:flex; }
+
+    /* Hamburger iframe styling */
+    #hamburgerIframe {
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh;
+      width: 0;
+      border: 0;
+      z-index: 10050;
+      background: transparent;
+      transition: width .25s ease, opacity .25s;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #hamburgerOpener {
+      display: flex;
+      background:#fff;
+      box-shadow:0 4px 12px rgba(11,39,70,0.08);
+      cursor:pointer;
+    }
+    /* .logo-wrap { width: 140px; height:56px; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; } */
+    .logo-img { width:100%; height:100%; object-fit:cover; display:block; border-radius:8px; }
+    @media (min-width: 900px) {
+      #hamburgerIframe {
+        width: 360px !important;
+        opacity: 1 !important;
+        pointer-events: auto;
+      }
+      #hamburgerOpener { display:none; }
+      .main { margin-left:250px; }
+       
+    }
+
+    @media (max-width: 899px) {
+      #hamburgerIframe { width:0; opacity:0; pointer-events:none; }
+      #hamburgerOpener { display:flex; }
+      .main { margin-left:0; }
+      .close-btn { display: block !important; }
+    }
+      @media (max-width: 420px) {
+    /* .logo-wrap { width: 140px; height:56px; } */
+  }
+  .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(11,39,70,0.7);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .22s ease;
+      z-index: 10045; /* below iframe (10050) and opener (10060) */
+    }
+    .overlay.visible { opacity: 1; pointer-events: auto; }
+  </style>
+</head>
+
+<body>
+  <!-- Hamburger Menu Integration -->
+  <div id="hamburgerOpener" aria-label="Open menu">
+        <div class="logo-wrap" style="width: 56px;">
+          <img src="favicon.png" class="logo-img" alt="logo" onerror="this.style.display='none'">
+        </div>
+  </div>
+
+  <!-- iframe loads your Hamburger UI -->
+  <iframe id="hamburgerIframe" src="Hamburger.html" title="Navigation" aria-hidden="true"></iframe>
+
+  <div id="overlay" class="overlay" aria-hidden="true"></div>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h2 style="margin:0 0 6px 0;">Meeting Rooms</h2>
+        <div style="color:var(--muted)">Browse & book meeting rooms in your harbor</div>
+      </div>
+    </div>
+
+    <div id="roomsRow" class="row"></div>
+    <div id="emptyMsg" class="text-center py-4 text-muted d-none">No rooms found.</div>
+    <div id="loader" class="text-center mt-4"><div class="spinner-border text-secondary"></div></div>
+  </main>
+
+  <template id="cardTpl">
+    <div class="col-md-6 col-lg-4 mb-4 col">
+      <div class="card room-card w-100">
+        <img class="room-img card-img-top" src="">
+        <div class="card-body">
+          <h5 class="room-title mb-1"></h5>
+          <div class="meta-line"><span class="floor"></span> • <span class="people"></span></div>
+          <p class="small text-muted room-desc mb-2"></p>
+          <div class="amenities-area"></div>
+          <div style="margin-top:auto; display:flex; justify-content:center;">
+            <button class="book-btn btn-sm btn-book">Book Now</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbwe8AIxQwxnOVs-aMZPTeO5seoJC-b_CUiMfN_Ad40sZipUYvc9dyVMbzYZbTtYyJgG/exec";
+    const whatsappKey = 'whatsappNumber';
+    const w = localStorage.getItem(whatsappKey);
+    let custInfo = {};
+    try { const jsonStr = localStorage.getItem('customerInfo'); if (jsonStr) custInfo = JSON.parse(jsonStr); } catch(e){}
+    let companyCreditsRemaining = null;
+
+    const loader = document.getElementById('loader');
+    const roomsRow = document.getElementById('roomsRow');
+    const emptyMsg = document.getElementById('emptyMsg');
+
+    const hamburgerIframe = document.getElementById('hamburgerIframe');
+    const hamburgerOpener = document.getElementById('hamburgerOpener');
+    const overlay = document.getElementById('overlay');
+
+    // --- Login guard ---
+    if (!w) {
+      window.location.href = 'register.html';
+    }
+
+  function loadCompanyCreditsAndRender() {
+        try {
+          // need company and harbor from customer info
+          if (!custInfo || !custInfo['Company Name']) {
+            companyCreditsRemaining = null;
+            return;
+          }
+          const company = String(custInfo['Company Name'] || '').trim();
+          const harbor = String(custInfo['Harbor'] || '').trim();
+
+          const url = `${scriptUrl}?action=getCompanyCredits&company=${encodeURIComponent(company)}&harbor=${encodeURIComponent(harbor)}`;
+          fetch(url)
+            .then(r => {
+              if (!r.ok) throw new Error('Network');
+              return r.json();
+            })
+            .then(j => {
+              const remaining = (j && (j.RemainingCredits !== undefined)) ? Number(j.RemainingCredits)
+                : (j && j.remaining !== undefined ? Number(j.remaining) : null);
+              const total = (j && (j.TotalCredits !== undefined)) ? Number(j.TotalCredits)
+                : (j && j.total !== undefined ? Number(j.total) : null);
+
+              companyCreditsRemaining = (remaining !== null && !isNaN(remaining)) ? remaining : null;
+            })
+            .catch(err => {
+              console.warn('Failed to load credits:', err && err.message ? err.message : err);
+              companyCreditsRemaining = null;
+            });
+
+        } catch (err) {
+          console.error('Credits load error:', err.message);
+          companyCreditsRemaining = null;
+        }
+      }
+
+      loadCompanyCreditsAndRender();
+
+    // --- Fetch meeting rooms ---
+    function fetchRooms(harbor) {
+      showLoader(true);
+      fetch(`${scriptUrl}?action=getRoomsByHarbor&harbor=${encodeURIComponent(harbor)}`)
+        .then(r => r.json())
+        .then(resp => {
+          showLoader(false);
+          const rooms = (resp && resp.rooms) ? resp.rooms : [];
+          renderRooms(rooms);
+        })
+        .catch(err => {
+          showLoader(false);
+          emptyMsg.classList.remove('d-none');
+          emptyMsg.innerText = 'Error: ' + err.message;
+        });
+    }
+
+    function showLoader(v){ loader.style.display = v ? 'block' : 'none'; }
+
+    function renderRooms(rooms) {
+      roomsRow.innerHTML = '';
+      if (!rooms || rooms.length === 0) {
+        emptyMsg.classList.remove('d-none');
+        return;
+      }
+      emptyMsg.classList.add('d-none');
+      const tpl = document.getElementById('cardTpl');
+
+      const mapping = [
+        { key:'wifi', label:'WiFi', icon:'fa-wifi' },
+        { key:'naturalLight', label:'Natural Light', icon:'fa-sun' },
+        { key:'airConditioning', label:'AC', icon:'fa-fan' },
+        { key:'projector', label:'Projector', icon:'fa-tv' },
+        { key:'whiteboard', label:'Whiteboard', icon:'fa-chalkboard' },
+        { key:'videoConference', label:'Video Conf', icon:'fa-video' }
+      ];
+
+      rooms.forEach(r => {
+        const node = tpl.content.cloneNode(true);
+        node.querySelector('.room-img').src = r.imageUrl || 'https://placehold.co/600x360?text=Room';
+        node.querySelector('.room-title').innerText = r.MeetingRoom;
+        node.querySelector('.floor').innerText = r.floor || '';
+        node.querySelector('.people').innerText = r.people || '';
+        node.querySelector('.room-desc').innerText = r.description || '';
+        const amenArea = node.querySelector('.amenities-area');
+        (r.amenities || {}).constructor === Object && mapping.forEach(m => {
+          if (r.amenities[m.key]) {
+            const span = document.createElement('span');
+            span.className = 'amen-pill';
+            span.innerHTML = `<i class="fas ${m.icon}"></i> ${m.label}`;
+            amenArea.appendChild(span);
+          }
+        });
+
+        node.querySelector('.btn-book').addEventListener('click', ()=>{}); // older template compatibility
+        const bookBtn = node.querySelector('.book-btn');
+        // If credits known and remaining <= 0 -> disable booking and show small tooltip
+        let creditsNeeded = findRoomCapacity(r.people);
+        if (companyCreditsRemaining !== null && Number(companyCreditsRemaining) < (creditsNeeded * 0.5)) {
+          bookBtn.classList.add('btn-disabled');
+          bookBtn.classList.add('btn-disabled'); // ensure visual disabled state
+          bookBtn.classList.add('disabled');
+          bookBtn.setAttribute('disabled', 'disabled');
+          bookBtn.disabled = true;
+          bookBtn.title = 'You do not have enough credits';
+        } else {
+          bookBtn.addEventListener('click', ()=>{
+            if (window.parent && window.parent !== window) window.parent.postMessage({ action: 'gotoLanding', room: r.MeetingRoom, harbor: r.Harbor }, '*');
+            else location.href = 'MeetingRoomLandingPage.html?room='+encodeURIComponent(r.MeetingRoom)+'&harbor='+encodeURIComponent(r.Harbor);
+          });
+        }
+
+        roomsRow.appendChild(node);
+      });
+    }
+
+    function findRoomCapacity(people) {
+      if (people) {
+        const n = parseInt(String(people).replace(/\D/g, ''), 10);
+        if (!isNaN(n) && n > 0) return n;
+      }
+      return null;
+    }
+
+    // --- Determine harbor and load ---
+    if (custInfo && custInfo.Harbor) {
+      // use setTimeout with a function reference (avoid immediate call)
+      setTimeout(() => fetchRooms(custInfo.Harbor), 1000);
+    } else {
+      fetch(`${scriptUrl}?action=getCustomerDetails&whatsappNumber=${encodeURIComponent(w)}`)
+        .then(r => r.json())
+        .then(resp => {
+          if (resp && resp.customer) {
+            localStorage.setItem('customerInfo', JSON.stringify(resp.customer));
+            fetchRooms(resp.customer.Harbor);
+          } else {
+            window.location.href = 'register.html';
+          }
+        })
+        .catch(() => window.location.href = 'register.html');
+    }
+
+    // --- Messaging helpers ---
+    function postToIframe(msg) {
+      try {
+        if (hamburgerIframe && hamburgerIframe.contentWindow) {
+          hamburgerIframe.contentWindow.postMessage(msg, '*');
+        }
+      } catch (e) {
+        // ignore if iframe not ready
+        console.warn('postToIframe failed', e);
+      }
+    }
+
+    // --- Hamburger Controls ---
+    // On mobile: we expand iframe to 70vw and request the iframe to show its internal drawer + close button
+    function openHamburger() {
+      if (window.innerWidth < 900) {
+        hamburgerIframe.style.width = '70vw';
+        hamburgerIframe.style.opacity = '1';
+        hamburgerIframe.style.pointerEvents = 'auto';
+        if (overlay) overlay.classList.add('visible');
+        // ask iframe to show its panel and show close button (mobile)
+        postToIframe({ type: 'panel-show', showClose: true, active: 'browse' });
+      } else {
+        // Desktop: expand as persistent sidebar
+        hamburgerIframe.style.width = '360px';
+        hamburgerIframe.style.opacity = '1';
+        hamburgerIframe.style.pointerEvents = 'auto';
+        // tell iframe to prepare as a sidebar (no close button)
+        postToIframe({ type: 'panel-show', showClose: false, active: 'browse' });
+        // shift main content margin (CSS media also does this but keep in sync)
+        document.querySelector('.main').style.marginLeft = '250px';
+      }
+    }
+
+    // Close/hide behavior (mobile overlay or collapse desktop)
+    function closeHamburger() {
+      // ask iframe to hide/animate away
+      postToIframe({ type: 'panel-hide' });
+      // hide visually in parent
+      hamburgerIframe.style.width = '0';
+      hamburgerIframe.style.opacity = '0';
+      hamburgerIframe.style.pointerEvents = 'none';
+      if (overlay) overlay.classList.remove('visible');
+      // remove left margin when collapsed
+      if (window.innerWidth >= 900) {
+        document.querySelector('.main').style.marginLeft = '';
+      }
+    }
+
+    // Toggle behavior: opener toggles state depending on viewport
+    hamburgerOpener.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      // if currently visible (width > 50) then close; else open
+      const curW = parseInt(getComputedStyle(hamburgerIframe).width || '0', 10);
+      if (window.innerWidth < 900) {
+        // Mobile: always open overlay
+        openHamburger();
+      } else {
+        // Desktop: toggle persistent sidebar
+        if (curW > 50) {
+          // currently open => collapse
+          closeHamburger();
+        } else {
+          openHamburger();
+        }
+      }
+    });
+
+    // Listen for messages from the iframe (Hamburger.html)
+//     window.addEventListener('message', (e) => {
+//       const d = e.data || {};
+//       if (!d) return;
+
+//       // iframe asked parent to close overlay
+//       if (d.type === 'hamburger-close' || d.type === 'panel-hide' || d.type === 'hamburger-close-parent') {
+//         closeHamburger();
+//       }
+
+//       if (d.type === 'hamburger-logout') {
+//         try {
+//           // defensive: remove same s iframe
+//           localStorage.removeItem('customerInfo');
+//           localStorage.removeItem('whatsappNumber');
+//         } catch (err) { /* ignore */ }
+//         // close UI and redirect parent to login/register
+//         closeHamburger();
+//         window.location.href = 'register.html';
+//       }
+
+//       if (d.type === 'hamburger-closed-by-outside-click') {
+//         closeHamburger();
+//       }
+
+//       // navigation requested by iframe
+//       if (d.type === 'hamburger-navigate' && d.href) {
+//         closeHamburger();
+//         setTimeout(() => { window.location.href = d.href; }, 220);
+//       }
+//       // legacy shape: { type:'hamburger-navigate', action:'mybookings' }
+//       if (d.type === 'hamburger-navigate' && d.action) {
+//         // Desktop flicker fix: only close hamburger for mobile; keep open on desktop
+//         if (window.innerWidth < 900) {
+//           closeHamburger();
+//         }
+
+//         // Smooth navigation with minimal delay
+//         setTimeout(() => {
+//           if (d.action === 'browse') window.location.href = 'MeetingRoomList.html';
+//           else if (d.action === 'book') window.location.href = 'MeetingRoomLandingPage.html';
+//           else if (d.action === 'mybookings') window.location.href = 'MyBookings.html';
+//         }, 120);
+//       }
+
+
+//       // iframe reports credit numbers or ready state
+//       if (d.type === 'hamburger-credits') {
+//         // expose globally if other code wants it
+//         window.companyCreditsRemaining = d.remaining;
+//         // optional: you could re-render rooms to reflect credit based enable/disable
+//       }
+// if (d.type === 'hamburger-ready') {
+//   try {
+//     const cust = JSON.parse(localStorage.getItem('customerInfo') || '{}');
+//     const name = cust && (cust['First Name'] || cust['Name']) ? `${(cust['First Name']||cust['Name'])}${cust['Last Name']?(' '+cust['Last Name']):''}` : '';
+//     postToIframe({ type: 'hamburger-setUser', name: name, company: (cust && (cust['Company Name']||cust.company))||'', harbor: (cust && cust.Harbor) || '' });
+
+//     // compute active based on current page
+//     let activeNav = '';
+//     try {
+//       const href = (window.location && window.location.href) ? window.location.href : '';
+//       if (href.indexOf('MyBookings') !== -1 || href.toLowerCase().indexOf('mybookings') !== -1) activeNav = 'mybookings';
+//       else if (href.indexOf('MeetingRoomList') !== -1 || href.toLowerCase().indexOf('meetingroomlist') !== -1) activeNav = 'browse';
+//       else if (href.indexOf('MeetingRoomLandingPage') !== -1 || href.toLowerCase().indexOf('meetingroomlandingpage') !== -1) activeNav = 'browse';
+//     } catch (e) { activeNav = ''; }
+
+//     const wantClose = window.innerWidth < 900;
+//     postToIframe({ type: 'panel-show', showClose: wantClose, active: activeNav });
+//   } catch (e) {}
+// }
+
+//     });
+
+// ---------- Replace the message handler with this robust version ----------
+window.addEventListener('message', (e) => {
+  const d = (e && e.data) ? e.data : {};
+  if (!d) return;
+
+  // Unified names
+  const kind = d.type || d.action || '';
+  
+  if (d && d.type === 'hamburger-request-parent-width') {
+    e.source.postMessage({ type: 'hamburger-parent-width', width: window.innerWidth }, '*');
+  }
+  // Parent/iframe asked to hide/close
+  if (kind === 'hamburger-close' || kind === 'panel-hide' || kind === 'hamburger-close-parent' || kind === 'hamburger-closed-by-outside-click') {
+    // close only on mobile (desktop keeps persistent sidebar open)
+    if (window.innerWidth < 900) closeHamburger();
+    return;
+  }
+
+  // Navigation requested by iframe (either {type:'hamburger-navigate', href:..., action:...} or older shape)
+  if (kind === 'hamburger-navigate') {
+    // derive href (normalize older action-based messages)
+    let href = d.href || null;
+    if (!href && d.action) {
+      if (d.action === 'browse') href = 'MeetingRoomList.html';
+      else if (d.action === 'mybookings') href = 'MyBookings.html';
+      else if (d.action === 'book') href = 'MeetingRoomLandingPage.html';
+    }
+
+    // If target page is the same as current -> DO NOT reload (prevents flicker)
+    const current = window.location.pathname.split('/').pop() || '';
+    const target = href ? href.split('/').pop() : null;
+    if (target && target === current) {
+      // same page: keep sidebar state for desktop; for mobile, close it.
+      if (window.innerWidth < 900) closeHamburger();
+      // also set active nav on iframe if requested (no navigation)
+      try { if (hamburgerIframe && hamburgerIframe.contentWindow) hamburgerIframe.contentWindow.postMessage({ type:'panel-show', showClose: window.innerWidth < 900, active: d.action || 'browse' }, '*'); } catch(e) {}
+      return;
+    }
+
+    // otherwise navigate (close on mobile)
+    if (window.innerWidth < 900) closeHamburger();
+    setTimeout(() => { if (href) window.location.href = href; }, 120);
+    return;
+  }
+
+  // logout message
+  if (d.type === 'hamburger-logout') {
+    //try { localStorage.removeItem('customerInfo'); localStorage.removeItem('whatsappNumber'); } catch (e) {}
+    closeHamburger();
+    //window.location.href = 'register.html';
+    return;
+  }
+
+  // iframe reports credits or ready state
+  if (d.type === 'hamburger-credits') {
+    // expose globally for other code that checks companyCreditsRemaining
+    window.companyCreditsRemaining = d.remaining;
+    // optionally re-render UI based on credits
+  }
+
+  if (d.type === 'hamburger-ready') {
+    // when iframe is ready, send initial context (user/company/harbor and whether to show close btn)
+    try {
+      const cust = JSON.parse(localStorage.getItem('customerInfo') || '{}');
+      const name = cust && (cust['First Name'] || cust['Name']) ? `${(cust['First Name']||cust['Name'])}${cust['Last Name']?(' '+cust['Last Name']):''}` : '';
+      const wantClose = window.innerWidth < 900;
+      // send user and panel-show with correct close preference
+      if (hamburgerIframe && hamburgerIframe.contentWindow) {
+        hamburgerIframe.contentWindow.postMessage({ type:'hamburger-setUser', name: name, company: (cust && (cust['Company Name']||cust.company))||'', harbor: (cust && cust.Harbor) || '' }, '*');
+        hamburgerIframe.contentWindow.postMessage({ type:'panel-show', showClose: wantClose, active: 'browse' }, '*');
+      }
+    } catch (ee) { /* ignore */ }
+  }
+});
+
+
+    // When iframe element finishes loading, ping it to refresh content
+    // hamburgerIframe.addEventListener('load', () => {
+    //   try {
+    //     const wantClose = window.innerWidth < 900;
+    //     postToIframe({ type: 'hamburger-open' });
+    //     postToIframe({ type: 'panel-show', showClose: wantClose, active: 'browse' });
+    //   } catch (e) {}
+    // });
+
+    hamburgerIframe.addEventListener('load', () => {
+  try {
+    const wantClose = window.innerWidth < 900;
+
+    // compute what nav should be active based on current parent URL/path
+    let activeNav = '';
+    try {
+      const href = (window.location && window.location.href) ? window.location.href : '';
+      if (href.indexOf('MyBookings') !== -1 || href.toLowerCase().indexOf('mybookings') !== -1) activeNav = 'mybookings';
+      else if (href.indexOf('MeetingRoomList') !== -1 || href.toLowerCase().indexOf('meetingroomlist') !== -1) activeNav = 'browse';
+      else if (href.indexOf('MeetingRoomLandingPage') !== -1 || href.toLowerCase().indexOf('meetingroomlandingpage') !== -1) activeNav = 'browse';
+      // otherwise leave '' and iframe will choose default
+    } catch (e) { activeNav = ''; }
+
+    // tell iframe to open/refresh and which nav should be active
+    postToIframe({ type: 'hamburger-open' });
+    postToIframe({ type: 'panel-show', showClose: wantClose, active: activeNav });
+  } catch (e) {}
+});
+
+
+    // Ensure proper sidebar state on resize
+    function ensureSidebarOnResize() {
+      if (window.innerWidth >= 900) {
+        // ensure iframe visible as sidebar
+        hamburgerIframe.style.width = '360px';
+        hamburgerIframe.style.opacity = '1';
+        hamburgerIframe.style.pointerEvents = 'auto';
+        document.querySelector('.main').style.marginLeft = '250px';
+        // tell iframe to hide its close button (desktop)
+        postToIframe({ type: 'panel-show', showClose: false });
+      } else {
+        // hide for mobile by default
+        hamburgerIframe.style.width = '0';
+        hamburgerIframe.style.opacity = '0';
+        hamburgerIframe.style.pointerEvents = 'none';
+        document.querySelector('.main').style.marginLeft = '';
+        // instruct iframe to use close button when opened on mobile
+        postToIframe({ type: 'panel-hide' });
+      }
+    }
+    window.addEventListener('resize', ensureSidebarOnResize);
+    // initial state
+    ensureSidebarOnResize();
+
+    document.addEventListener('pointerdown', (ev) => {
+    try {
+      // Only apply outside-click close logic for mobile (<900px)
+      if (window.innerWidth >= 900) return;
+
+      const curW = parseInt(getComputedStyle(hamburgerIframe).width || '0', 10);
+      const isOpen = hamburgerIframe.style.pointerEvents === 'auto' && curW > 50;
+      if (!isOpen) return;
+
+      if (ev.target && ev.target.closest && ev.target.closest('#hamburgerOpener')) return;
+
+      closeHamburger();
+    } catch (e) {
+      // swallow errors silently
+    }
+    }, { passive: true });
+
+
+    // clicking the overlay should close the hamburger (mobile)
+    if (overlay) {
+      overlay.addEventListener('click', (ev) => {
+        try { closeHamburger(); } catch (e) {}
+      });
+    }
+
+  </script>
+</body>
+</html>

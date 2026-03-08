@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Register — Beginest</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <style>
+    :root{ --accent:#0b2746; --muted:#6c757d; }
+    /* body{ background:#f6f7f9; font-family: system-ui, Roboto; padding:28px; color:#0b2746; } */
+    body {
+  background: url('Background.jpg') no-repeat center center fixed;
+  background-size: cover;
+  font-family: system-ui, Roboto;
+  padding: 28px;
+  color: #0b2746;
+}
+    .panel { max-width:520px; margin:5% auto; background:#fff; padding:22px; border-radius:12px; box-shadow:0 8px 24px rgba(22,28,45,0.06); }
+    .btn-accent{ background:var(--accent); color:#fff; border:0; border-radius:12px; padding:8px 14px; box-shadow:0 8px 20px rgba(7,26,52,0.12); }
+    .btn-outline-muted { border-radius:12px; padding:8px 14px; }
+    .muted { color:var(--muted); }
+    .spinner-overlay{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.6); z-index:9999; visibility:hidden; opacity:0; transition:.12s; }
+    .spinner-overlay.show{ visibility:visible; opacity:1; }
+    .logo { height:58px; margin-bottom:20px; display:block; }
+    .form-group {margin-bottom: 1.5rem;}
+    .text-center {margin-bottom: 1rem;}
+    #whInput::placeholder {opacity: 0.4;}
+    ::-ms-input-placeholder {opacity: 0.4;}
+    .toggle-password {
+  position: absolute;
+  top: 38px;
+  right: 14px;
+  cursor: pointer;
+  color: #6c757d;
+  font-size: 1rem;
+}
+
+.toggle-password:hover {
+  color: #0b2746;
+}
+
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <img src="1682591259288.jpeg" alt="logo" class="logo" onerror="this.style.display='none'">
+    <p class="muted" id="start">Start by entering the WhatsApp number registered with Beginest.</p>
+    <p class="muted" id="loginPWD" style="display: none;">Enter your Password to Login.</p>
+    <p class="muted" id="setPWD" style="display: none;">This is the first time you are setting up the password.</p>
+    <div id="alertArea"></div>
+    <div class="form-group"><input type="tel" id="whInput" class="form-control" inputmode="numeric" pattern="[0-9]*" maxlength="10" placeholder="Enter your WhatsApp number" /></div>
+
+    <div id="passwordSection" style="display:none;">
+      <div class="form-group position-relative">
+      <label>Set password</label>
+      <input id="pwInput" type="password" class="form-control pr-5" />
+      <i class="fas fa-eye toggle-password" data-target="pwInput"></i>
+    </div>
+    <small class="text-muted d-block mt-2" style="margin-top: -25px !important; margin-bottom: 25px;">
+      Password must be at least <b>8 characters</b> long and include
+      <b>1 uppercase letter</b>, <b>1 number</b>, and <b>1 special character</b>.
+    </small>
+
+    <div class="form-group position-relative">
+      <label>Confirm password</label>
+      <input id="pwConfirm" type="password" class="form-control pr-5" />
+      <i class="fas fa-eye toggle-password" data-target="pwConfirm"></i>
+    </div>
+
+      <div class="mt-3 text-center"><button id="btnSetPassword" class="btn-accent">Set password</button></div>
+    </div>
+
+    <!-- <div id="loginSection" style="display:none;">
+      <div class="form-group"><label>Enter password</label><input id="pwLogin" type="password" class="form-control" /></div>
+      <div class="mt-3 text-center"><button id="btnLogin" class="btn-accent">Login</button></div>
+    </div> -->
+
+    <div id="loginSection" style="display:none;">
+      <div class="form-group position-relative">
+        <label>Enter password</label>
+        <input id="pwLogin" type="password" class="form-control pr-5" />
+        <i class="fas fa-eye toggle-password" data-target="pwLogin"></i>
+        <small class="d-block mt-2">
+          <a href="#" id="forgotPwdLink">Forgot password?</a>
+        </small>
+      </div>
+      <div class="mt-3 text-center">
+        <button id="btnLogin" class="btn-accent">Login</button>
+      </div>
+    </div>
+
+
+    <div class="mt-3 text-center" id="btnCheckHolder"><button id="btnCheck" class="btn btn-outline-secondary btn-outline-muted btn-accent">Continue</button></div>
+  </div>
+
+  <div id="spinnerOverlay" class="spinner-overlay"><div class="spinner-border text-secondary"></div></div>
+
+  <script>
+    const scriptUrl='https://script.google.com/macros/s/AKfycbwe8AIxQwxnOVs-aMZPTeO5seoJC-b_CUiMfN_Ad40sZipUYvc9dyVMbzYZbTtYyJgG/exec';
+    const whatsappKey='whatsappNumber';
+    const whInput=document.getElementById('whInput'), btnCheck=document.getElementById('btnCheck');
+    const passwordSection=document.getElementById('passwordSection'), loginSection=document.getElementById('loginSection');
+    const btnSetPassword=document.getElementById('btnSetPassword'), btnLogin=document.getElementById('btnLogin');
+    const pwInput=document.getElementById('pwInput'), pwConfirm=document.getElementById('pwConfirm'), pwLogin=document.getElementById('pwLogin');
+    const alertArea=document.getElementById('alertArea'), spinnerOverlay=document.getElementById('spinnerOverlay');
+    const loginPWD = document.getElementById('loginPWD');
+    const setPWD = document.getElementById('setPWD');
+    const start = document.getElementById('start');
+
+    function showSpinner(s){ if(s) spinnerOverlay.classList.add('show'); else spinnerOverlay.classList.remove('show'); }
+    function showAlert(html,t='warning'){ alertArea.innerHTML=`<div class="alert alert-${t}">${html}</div>`; }
+    function clearAlert(){ alertArea.innerHTML=''; }
+    function canonicalize(num){ return (''+num).replace(/\D/g,''); }
+
+    function safeJSONParse(s){ try { return JSON.parse(s || '{}'); } catch(e){ return {}; } } 
+    
+    btnCheck.addEventListener('click',function(){
+      clearAlert(); passwordSection.style.display='none'; loginSection.style.display='none';
+      const n=canonicalize(whInput.value||'');
+      if(!n){ showAlert('Please enter your WhatsApp number','danger'); return; }
+      showSpinner(true);
+      fetch(`${scriptUrl}?action=getCustomerDetails&whatsappNumber=${encodeURIComponent(n)}`)
+        .then(r=>r.json()).then(resp=>{
+          if(resp&&resp.customer){
+            localStorage.setItem('customerInfo', JSON.stringify(resp.customer));
+            const cust=resp.customer; const hasPassword=!!(cust.Password||cust.password);
+            btnCheck.style.display='none';
+            whInput.dataset.canonical=n;
+
+            /* Disable WhatsApp input once user is identified */
+           whInput.setAttribute('readonly', 'readonly');
+           whInput.classList.add('bg-light');
+
+            if(!hasPassword){ 
+              start.style.display = 'none'; 
+              setPWD.style.display = 'block';
+              passwordSection.style.display='block'; 
+              showAlert('Set your password to continue.','info'); 
+            }
+            else {
+              start.style.display = 'none'; 
+              loginPWD.style.display = 'block';
+              loginSection.style.display='block'; 
+            }
+            
+          } else showAlert('Not a customer. Please contact admin.','warning');
+        }).catch(err=>showAlert('Network error: '+err.message,'danger')).finally(()=>showSpinner(false));
+    });
+
+    btnSetPassword.addEventListener('click',function(){
+      clearAlert();
+      const n=canonicalize(whInput.dataset.canonical||whInput.value), pw=pwInput.value||'', pwc=pwConfirm.value||'';
+      const passwordRule = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+      if (!passwordRule.test(pw)) {
+        showAlert('Password must be at least 8 characters long and include 1 uppercase letter, 1 number, and 1 special character.','warning');
+        return;
+      }
+
+      if(!n||!pw||!pwc){ showAlert('All fields required','warning'); return; }
+      if(pw!==pwc){ showAlert('Passwords do not match','warning'); return; }
+      showSpinner(true);
+      fetch(scriptUrl,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`action=setPassword&whatsappNumber=${encodeURIComponent(n)}&password=${encodeURIComponent(pw)}`})
+        .then(r=>r.json()).then(resp=>{
+          if(resp&&resp.success){
+            localStorage.setItem(whatsappKey,n); localStorage.setItem('whatsappSetAt',Date.now().toString());
+            let cust = safeJSONParse(localStorage.getItem('customerInfo'));
+            if (cust && Object.keys(cust).length) {
+               if(window.parent&&window.parent!==window) window.parent.postMessage({action:'loginSuccess',customer:cust},'*');
+              if(window.parent&&window.parent!==window) window.parent.postMessage({action:'gotoRooms'},'*'); else location.href='MeetingRoomList.html';
+            }
+            else {
+              fetch(`${scriptUrl}?action=getCustomerDetails&whatsappNumber=${encodeURIComponent(n)}`).then(r2=>r2.json()).then(cresp=>{
+              if(window.parent&&window.parent!==window) window.parent.postMessage({action:'loginSuccess',customer:cresp.customer},'*');
+              if(window.parent&&window.parent!==window) window.parent.postMessage({action:'gotoRooms'},'*'); else location.href='MeetingRoomList.html';
+            });
+            }
+          } else showAlert('Failed to set password','danger');
+        }).catch(err=>showAlert('Network error: '+err.message,'danger')).finally(()=>showSpinner(false));
+    });
+
+    btnLogin.addEventListener('click',function(){
+      clearAlert();
+      const n=canonicalize(whInput.dataset.canonical||whInput.value), pw=pwLogin.value||'';
+      if(!n||!pw){ showAlert('Number and password required','warning'); return; }
+      showSpinner(true);
+      fetch(`${scriptUrl}?action=checkPassword&whatsappNumber=${encodeURIComponent(n)}&password=${encodeURIComponent(pw)}`)
+        .then(r=>r.json()).then(resp=>{
+          if(resp&&resp.message==='OK'){
+             showSpinner(true);
+            localStorage.setItem(whatsappKey,n); localStorage.setItem('whatsappSetAt',Date.now().toString());
+            let cust = safeJSONParse(localStorage.getItem('customerInfo'));
+            if (cust && Object.keys(cust).length) {
+               if(window.parent&&window.parent!==window) window.parent.postMessage({action:'loginSuccess',customer:cust},'*');
+              if(window.parent&&window.parent!==window) window.parent.postMessage({action:'gotoRooms'},'*'); else location.href='MeetingRoomList.html';
+            }
+            else {
+              fetch(`${scriptUrl}?action=getCustomerDetails&whatsappNumber=${encodeURIComponent(n)}`).then(r2=>r2.json()).then(cresp=>{
+              if(window.parent&&window.parent!==window) window.parent.postMessage({action:'loginSuccess',customer:cresp.customer},'*');
+              if(window.parent&&window.parent!==window) window.parent.postMessage({action:'gotoRooms'},'*'); else location.href='MeetingRoomList.html';
+            });
+            }
+          } else showAlert('Invalid password','danger');
+        }).catch(err=>showAlert('Network error: '+err.message,'danger')).finally(()=>showSpinner(false));
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!e.target.classList.contains('toggle-password')) return;
+
+      const inputId = e.target.getAttribute('data-target');
+      const input = document.getElementById(inputId);
+      if (!input) return;
+
+      if (input.type === 'password') {
+        input.type = 'text';
+        e.target.classList.remove('fa-eye');
+        e.target.classList.add('fa-eye-slash');
+      } else {
+        input.type = 'password';
+        e.target.classList.remove('fa-eye-slash');
+        e.target.classList.add('fa-eye');
+      }
+    });
+
+    const forgotPwdLink = document.getElementById('forgotPwdLink');
+
+    if (forgotPwdLink) {
+      forgotPwdLink.addEventListener('click', function (e) {
+      e.preventDefault();
+      clearAlert();
+
+      loginSection.style.display = 'none';
+      loginPWD.style.display = 'none';
+
+      //setPWD.style.display = 'block';
+      passwordSection.style.display = 'block';
+
+      showAlert('Please set a new password to continue.', 'info');
+   });
+}
+
+  </script>
+</body>
+</html>

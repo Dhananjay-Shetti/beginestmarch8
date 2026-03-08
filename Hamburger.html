@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hamburger Navigation</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+<style>
+  :root {
+    --panel-bg: #ffffff;
+    --accent: #0b2746;
+    --muted: #6c757d;
+    --success: #10b981;
+    --warn: #f97316;
+    --danger: #ef4444;
+  }
+  html,body { height:100%; margin:0; font-family: Inter, system-ui, Roboto, Arial; -webkit-font-smoothing:antialiased; }
+  .shell { height:100vh; width:100%; background: transparent; }
+
+  /* Drawer as flex column so we can pin footer (user area) */
+  /* .drawer {
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    width: 260px;
+    max-width: 100%;
+    background: var(--panel-bg);
+    box-shadow: 4px 0 22px rgba(11,39,70,0.12);
+    padding: 20px;
+    box-sizing: border-box;
+    transform: translateX(0);
+    transition: transform .28s cubic-bezier(.2,.9,.25,1), opacity .22s;
+    z-index: 10000;
+    overflow-y: auto;
+    opacity: 1;
+    display: flex;
+    flex-direction: column;
+  } */
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100dvh;
+  width: 260px;
+  max-width: 100%;
+  background: var(--panel-bg);
+  box-shadow: 4px 0 22px rgba(11,39,70,0.12);
+
+  padding: calc(20px + env(safe-area-inset-top)) 20px 20px 20px;
+
+  box-sizing: border-box;
+  transform: translateX(0);
+  transition: transform .28s cubic-bezier(.2,.9,.25,1), opacity .22s;
+  z-index: 10000;
+
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  
+  opacity: 1;
+
+  display: flex;
+  flex-direction: column;
+
+}
+  .drawer.closed { transform: translateX(-110%); opacity: 0; }
+
+  .brand { display:flex; gap:12px; align-items:center; margin-bottom:14px; flex: 0 0 auto; }
+  .logo-wrap { width:200px; height:80px; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+  .logo-img { width:100%; height:100%; object-fit:cover; display:block; border-radius:8px; }
+  .brand-title { font-weight:700; color:var(--accent); font-size:1rem; }
+  .brand-sub { display:block; color:var(--muted); font-size:0.82rem; margin-top:2px; }
+
+  /* Scrollable content area (nav + credits + quick info) */
+  .drawer-body {
+    flex: 1 1 auto;
+    overflow: auto;
+    padding-right: 6px; /* give room for scrollbar */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  nav.nav { margin-top:20px 10px; }
+  .nav-item {
+    display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px; color:#324151;
+    text-decoration:none; cursor:pointer; margin-bottom:8px; user-select:none;
+  }
+  .nav-item:hover { background: #f4f7fb; }
+  .nav-item.active { background:var(--accent); color:#fff !important; font-weight:600; }
+  .nav-item .icon { width:28px; text-align:center; color:var(--accent); }
+  .nav-item.active .icon { width:28px; text-align:center; color:#fff; }
+
+  .divider { height:1px; background:#f1f5f9; margin:12px 0; }
+
+  /* credits box styling (kept so you can drop-in previous UI) */
+  .credits-box { background:#f8fafc; border-radius:8px; padding:10px; margin-bottom:12px; color:#0b2746; border:1px solid #eef6ff; font-weight:600; }
+  .credits-number { font-size:1.1rem; color:var(--accent); margin-left:6px; }
+
+  /* ensure the specific progress element styling you provided */
+  #companyCreditsProgress {
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    background-color: #e6e7e8; /* track */
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  #companyCreditsProgress::-moz-progress-bar { background: var(--credits-color, #38bdf8); }
+  #companyCreditsProgress::-webkit-progress-value { background: var(--credits-color, #38bdf8); }
+  #companyCreditsProgress::-webkit-progress-bar { background: #e6e7e8; }
+
+  .quick { margin:20px; color:var(--muted); font-size:0.9rem; }
+  .quick h6 { margin:0 0 8px 0; font-size:0.85rem; color:var(--muted); font-weight: 400;}
+  .quick small { display:block; color:var(--muted); white-space:pre-line; line-height: 1.5;}
+
+  /* User (footer) pinned to bottom */
+  .user {
+    flex: 0 0 auto;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 0px;
+    margin-top: 12px;
+    background: transparent;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+  .user-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .avatar { width:44px;height:44px;border-radius:50%;background:#fbbf24;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700; font-size:1rem; flex-shrink:0; }
+  .meta { font-size:0.88rem; color:var(--muted); line-height:1.1; }
+  .meta .name { display:block; color:var(--accent); font-weight:700; }
+  .meta .company { display:block; color:var(--muted); font-size:0.9rem; margin-top:2px; display:block; }
+  .logout { margin-top:6px; display:inline-block; padding:8px 12px; border-radius:8px; border:1px solid #eef6ff; color:#fff; cursor:pointer; background:var(--accent); font-weight:600; width:40%; box-sizing:border-box; }
+
+  /* close button (hidden by default — shown on small screens via CSS/JS) */
+  .close-btn { position:absolute; right:12px; top:12px; border:0; background:transparent; font-size:16px; color:var(--muted); cursor:pointer; display: none; }
+  .close-btn:hover { background: rgba(0,0,0,0.04); border-radius:6px; padding:6px; }
+
+  /* On small screens show close btn by default */
+  @media (max-width: 899px) {
+    .drawer { width: 70vw; max-width: 420px; }
+  }
+
+  /* On desktop keep drawer 260px */
+  @media (min-width: 900px) {
+    .drawer { width: 260px; }
+  }
+
+  /* small screens tweaks */
+  @media (max-width: 420px) {
+    .brand-title { font-size:0.95rem; }
+    .brand-sub { font-size:0.78rem; }
+    .logo-wrap { width: 140px; height:56px;  pointer-events: auto;  z-index: 2;}
+  }
+
+  /* ensure scrollbars are unobtrusive */
+  .drawer-body::-webkit-scrollbar { width:8px; }
+  .drawer-body::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.06); border-radius:6px; }
+</style>
+</head>
+<body>
+  <div class="shell">
+    <aside id="drawer" class="drawer" role="navigation" aria-label="Navigation panel">
+
+      <!-- logo/brand (image markup as you requested) -->
+      <div class="brand" id="brandRoot" title="">
+        <div class="logo-wrap">
+          <img src="1682591259288.jpeg" class="logo-img" alt="logo" onerror="this.style.display='none'">
+        </div>
+      </div>
+
+      <div class="divider" role="separator" aria-hidden="true"></div>
+      <!-- scrollable body -->
+      <div class="drawer-body" id="drawerBody">
+        <nav class="nav" id="navRoot" aria-label="Primary">
+          <div class="nav-item" data-action="browse" id="navBrowse"><span class="icon"><i class="fas fa-home"></i></span> Book Meeting Room</div>
+          <div class="nav-item" data-action="mybookings" id="navMyBookings"><span class="icon"><i class="fas fa-user"></i></span> My Bookings</div>
+        </nav>
+
+        <div class="divider" role="separator" aria-hidden="true"></div>
+
+
+      </div>
+
+      <!-- user area pinned to bottom -->
+      <div class="user" id="userArea" role="region" aria-label="User area">
+                <!-- === Credits UI as you requested === -->
+        <div id="creditsWrap" style="margin:20px;">
+          <div style="font-size:0.85rem; color:var(--muted); margin-bottom:6px;">TOKENS</div>
+          <div style="font-size:0.9rem; color:#324151;">
+            <div id="creditsRemaining" style="font-weight:700; font-size:1.05rem; margin-bottom:6px; display: inline;">Loading…</div>
+            <span id="creditsRemainingText" style="display: none;">Tokens Remaining</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <!-- progress component -->
+              <div style="flex:1;">
+                <progress id="companyCreditsProgress" value="0" max="100" style="width:100%; height:14px; -webkit-appearance:none;"></progress>
+              </div>
+              <div id="creditsTotal" style="text-align:right; font-size:1rem; color:var(--muted);">—</div>
+            </div>
+            <span id="creditsHint" style="display: none;font-size: 0.7rem;color: red;">You do not have enough tokens to book meeting room, Please contact your Harbor Manager.</span>
+          </div>
+        </div>
+        <!-- === end credits UI === -->
+        <div class="divider" role="separator" aria-hidden="true"></div>
+        <div class="quick">
+          <h6>QUICK INFO</h6>
+           <i class="fas fa-clock" style="margin-right:6px; color:var(--accent)"></i> Operating Hours
+          <small id="hoursText">Loading…</small>
+        </div>
+        <div class="divider" role="separator" aria-hidden="true"></div>
+        <div class="user-row">
+          <div id="avatar" class="avatar">U</div>
+          <div class="meta">
+            <span id="userName" class="name">Guest</span>
+            <span id="userCompany" class="company" style="display:none;"></span>
+          </div>
+        </div>
+        <div style="text-align: center;">
+          <button id="logoutBtn" class="logout">Logout</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+<script>
+(function(){
+  // Replace with your deployed Apps Script web app URL
+  const scriptUrl = "https://script.google.com/macros/s/AKfycbwe8AIxQwxnOVs-aMZPTeO5seoJC-b_CUiMfN_Ad40sZipUYvc9dyVMbzYZbTtYyJgG/exec";
+
+  const HARBOR_TIMINGS = {
+    "H1": { code: "H1", title: "Harbor H1", hoursText: "Mon–Fri: 09:00 – 22:00\nSat: 09:00 – 18:00" },
+    "H2": { code: "H2", title: "Harbor H2", hoursText: "Open 24 / 7" },
+    "H3": { code: "H3", title: "Harbor H3", hoursText: "Mon–Fri: 08:00 – 20:00\nSat: 09:00 – 14:00" },
+    "H4": { code: "H4", title: "Harbor H4", hoursText: "Mon–Fri: 09:00 – 21:00\nSat: 09:00 – 18:00" },
+    "H5": { code: "H5", title: "Harbor H5", hoursText: "Mon–Fri: 09:00 – 22:00\nSat: 09:00 – 22:00" },
+    "H6": { code: "H6", title: "Harbor H6", hoursText: "Mon–Fri: 10:00 – 20:00\nSat: 10:00 – 18:00" },
+    "H7": { code: "H7", title: "Harbor H7", hoursText: "Mon–Fri: 07:00 – 19:00\nSat: 08:00 – 14:00" },
+    "H8": { code: "H8", title: "Harbor H8", hoursText: "Mon–Fri: 09:30 – 18:30\nSat: 09:30 – 12:30" },
+    "H9": { code: "H9", title: "Harbor H9", hoursText: "Mon–Fri: 09:00 – 21:00\nSat: 09:00 – 18:00" }
+  };
+
+  const drawer = document.getElementById('drawer');
+  const creditsRemaining = document.getElementById('creditsRemaining');
+  const creditsRemainingText = document.getElementById('creditsRemainingText');
+  const companyCreditsProgress = document.getElementById('companyCreditsProgress');
+  const creditsTotal = document.getElementById('creditsTotal');
+  const creditsHint = document.getElementById('creditsHint'); // may be null if not present
+  const hoursText = document.getElementById('hoursText');
+  const userName = document.getElementById('userName');
+  const userCompany = document.getElementById('userCompany');
+  const avatar = document.getElementById('avatar');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  const navBrowse = document.getElementById('navBrowse');
+  const navMyBookings = document.getElementById('navMyBookings');
+
+  function post(msg){ try { parent.postMessage(msg, '*'); } catch(e){} }
+
+  function setActiveNav(name){
+    [navBrowse, navMyBookings].forEach(n => n.classList.remove('active'));
+    if (name === 'browse') navBrowse.classList.add('active');
+    if (name === 'mybookings') navMyBookings.classList.add('active');
+  }
+
+  // Update credits UI using the calculation you provided
+  function renderCompanyCredits(remaining, total) {
+    // compute percent
+    const remNum = (remaining === null || remaining === undefined) ? null : Number(remaining);
+    const totNum = (total === null || total === undefined) ? null : Number(total);
+
+    // show numbers
+    creditsRemaining.textContent = remNum !== null && !isNaN(remNum) ? `${remNum}` : '—';
+    creditsTotal.textContent = totNum !== null && !isNaN(totNum) ? `${totNum}` : '—';
+    creditsRemainingText.style.display = 'inline';
+
+    // guard
+    if (totNum === null || isNaN(totNum) || totNum === 0 || remNum === null || isNaN(remNum)) {
+      // fallback visuals
+      companyCreditsProgress.max = 100;
+      companyCreditsProgress.value = 0;
+      companyCreditsProgress.style.background = `linear-gradient(90deg, #38bdf8 0%, #e6e7e8 0%)`;
+      return;
+    }
+
+    const percent = Math.max(0, Math.min(100, (remNum / totNum) * 100));
+
+    // set progress
+    const prog = companyCreditsProgress;
+    prog.max = 100;
+    prog.value = percent;
+
+    // choose color according to thresholds: >50% => green, 25-50 => orange, <25% red
+    let color = '#10b981'; // green
+    if (percent <= 50 && percent > 25) color = '#f97316'; // orange
+    if (remNum <= 25) color = '#ef4444'; // red
+
+    // set CSS var for browsers honoring it
+    prog.style.setProperty('--credits-color', color);
+    // WebKit browsers often require setting the progress value bar color via background on the element:
+    //prog.style.background = `linear-gradient(90deg, ${color} ${percent}%, #e6e7e8 ${percent}%)`;
+
+    // optional hint
+    if (creditsHint) {
+      if (remNum <= 0) {
+        creditsHint.style.display = 'block';
+        creditsHint.textContent = 'No Tokens left — contact your Harbor Manager.';
+      } else if (remNum <= 10) {
+        creditsHint.style.display = 'block';
+        creditsHint.textContent = 'Tokens very low — you may not be able to book larger rooms.';
+      } else {
+        creditsHint.style.display = 'none';
+      }
+    }
+
+    // notify parent
+    post({ type: 'hamburger-credits', remaining: remNum, total: totNum, percent: percent });
+  }
+
+  function safeJSONParse(s){ try { return JSON.parse(s || '{}'); } catch(e){ return {}; } }
+
+  function loadLocalUser(){
+    try {
+      const cust = safeJSONParse(localStorage.getItem('customerInfo'));
+      if (cust && Object.keys(cust).length) {
+        const displayName = (cust['First Name'] && cust['Last Name']) ? `${cust['First Name']} ${cust['Last Name']}` : (cust['First Name'] || cust['Name'] || cust['WhatsappNumber'] || 'User');
+        userName.textContent = displayName;
+        avatar.textContent = (displayName||'?')[0].toUpperCase();
+        if (userCompany) {
+          if (cust['Company Name']) { userCompany.style.display = 'block'; userCompany.textContent = (cust['Company Name']||'') + ' • ' + (cust.Harbor||''); }
+          else userCompany.style.display = 'none';
+        }
+        const harborKey = (cust.Harbor || '').trim() || 'H5';
+        if (HARBOR_TIMINGS[harborKey]) {
+          hoursText.textContent = HARBOR_TIMINGS[harborKey].hoursText;
+        }
+        if (cust.logoUrl || cust.CompanyLogo || cust.logo) {
+          const logoImg = document.querySelector('.logo-img');
+          if (logoImg) {
+            const url = cust.logoUrl || cust.CompanyLogo || cust.logo;
+            logoImg.src = url;
+            logoImg.style.display = 'block';
+          }
+        }
+      } else {
+        userName.textContent = 'Guest';
+        avatar.textContent = 'G';
+        hoursText.textContent = 'Operating hours not available';
+        if (userCompany) userCompany.style.display = 'none';
+      }
+    } catch(e) {
+      userName.textContent = 'Guest';
+    }
+  }
+
+  // Fetch credits from backend (Apps Script)
+  function loadCreditsFromBackend() {
+    try {
+      const cust = safeJSONParse(localStorage.getItem('customerInfo'));
+      const company = (cust && (cust['Company Name'] || cust.company)) ? String(cust['Company Name'] || cust.company).trim() : '';
+      const harbor = (cust && cust.Harbor) ? String(cust.Harbor).trim() : '';
+
+      if (!company) {
+        renderCompanyCredits(null, null);
+        return;
+      }
+
+      const url = `${scriptUrl}?action=getCompanyCredits&company=${encodeURIComponent(company)}&harbor=${encodeURIComponent(harbor)}`;
+      fetch(url, { cache: 'no-store' })
+        .then(r => {
+          if (!r.ok) throw new Error('Network response not OK');
+          return r.json();
+        })
+        .then(j => {
+          let remaining = null, total = null;
+          if (j) {
+            if (j.RemainingCredits !== undefined) remaining = Number(j.RemainingCredits);
+            if (j.TotalCredits !== undefined) total = Number(j.TotalCredits);
+            if (j.remaining !== undefined) remaining = Number(j.remaining);
+            if (j.total !== undefined) total = Number(j.total);
+            if (remaining === null && j.Remaining !== undefined) remaining = Number(j.Remaining);
+          }
+          if ((remaining === null || isNaN(remaining)) && (total === null || isNaN(total))) {
+            renderCompanyCredits(null, null);
+          } else {
+            renderCompanyCredits(isNaN(remaining)?0:remaining, isNaN(total)?0:total);
+          }
+        })
+        .catch(err => {
+          console.warn('Failed to load Tokens:', err && err.message ? err.message : err);
+          renderCompanyCredits(null, null);
+        });
+    } catch (e) {
+      console.warn('Tokens fetch failed', e && e.message ? e.message : e);
+      renderCompanyCredits(null, null);
+    }
+  }
+
+  // Navigation event handlers
+// NAV click handlers - only close locally if allowCloseOnNav is true (parent sets this)
+let allowCloseOnNav = false; // parent will set via panel-show messages
+
+navBrowse.addEventListener('click', () => {
+  post({ type: 'hamburger-navigate', href: 'MeetingRoomLandingPage.html', action: 'browse' });
+  if (allowCloseOnNav) drawer.classList.add('closed');
+});
+navMyBookings.addEventListener('click', () => {
+  post({ type: 'hamburger-navigate', href: 'MyBookings.html', action: 'mybookings' });
+  if (allowCloseOnNav) drawer.classList.add('closed');
+});
+
+  logoutBtn.addEventListener('click', () => {
+    //try { localStorage.removeItem('customerInfo'); localStorage.removeItem('whatsappNumber'); localStorage.removeItem('whatsappSetAt'); } catch(e){}
+    //post({ type: 'hamburger-logout' });
+    if (window.top && window.top !== window) window.top.postMessage({ action:'hamburger-logout' }, '*');
+    // if (window.self === window.top) {
+    //   window.location.href = 'register.html';
+    // }
+  });
+
+  // parent messages (open/close/refresh)
+  window.addEventListener('message', (e) => {
+    const d = e.data || {};
+    if (!d) return;
+    const kind = d.type || d.action || '';
+
+    if (kind === 'panel-show' || kind === 'hamburger-open' || kind === 'hamburger-refresh') {
+  drawer.classList.remove('closed');
+
+  // set whether iframe should auto-close after nav clicks (parent decides mobile vs desktop)
+  if (typeof d.showClose !== 'undefined') allowCloseOnNav = !!d.showClose;
+  else allowCloseOnNav = (window.innerWidth < 900);
+
+  // optionally set active nav
+  if (d.active) setActiveNav(d.active);
+
+  loadLocalUser();
+  loadCreditsFromBackend();
+}
+
+
+    if (kind === 'hamburger-close' || kind === 'panel-hide' || kind === 'hamburger-close-local') {
+      drawer.classList.add('closed');
+    }
+
+    if (kind === 'hamburger-refresh-credits' || kind === 'refresh-credits' || d.type === 'hamburger-refreshCredits') {
+      loadCreditsFromBackend();
+    }
+
+    if (d.type === 'hamburger-setUser') {
+      if (d.name) { userName.textContent = d.name; avatar.textContent = (d.name||'?')[0].toUpperCase(); }
+      if (d.hours) hoursText.textContent = d.hours;
+      if (d.company || d.harbor) loadCreditsFromBackend();
+    }
+
+    if (d.activeNav) setActiveNav(d.activeNav);
+  });
+
+// Track the parent's true width via postMessage handshake
+let cachedParentWidth = 1024; // default assumption until parent reports
+
+function getParentWidth() {
+  return cachedParentWidth || window.innerWidth || 0;
+}
+
+// Ask parent for width once and update on reply
+function requestParentWidth() {
+  try {
+    post({ type: 'hamburger-request-parent-width' });
+  } catch (e) { /* ignore */ }
+}
+
+// Handle parent replies (parent must respond)
+window.addEventListener('message', (ev) => {
+  const d = ev.data || {};
+  if (d && d.type === 'hamburger-parent-width') {
+    cachedParentWidth = Number(d.width || 1024);
+  }
+});
+
+// --- Outside click setup (safe) ---
+function setupOutsideClickToClose() {
+  document.addEventListener('pointerdown', (ev) => {
+    try {
+      const parentW = getParentWidth();
+      // Only act for *small* screens (<900px real parent width)
+      if (parentW >= 900) return;
+
+      if (drawer.classList.contains('closed')) return;
+
+      const withinDrawer = ev.target && ev.target.closest && ev.target.closest('#drawer');
+      if (withinDrawer) return;
+
+      drawer.classList.add('closed');
+      post({ type: 'hamburger-closed-by-outside-click' });
+    } catch (e) { /* ignore */ }
+  }, { passive: true });
+
+  // ask parent for width on init
+  requestParentWidth();
+}
+
+
+  // init
+  (function init(){
+    //refreshCloseBtnVisibility();
+    loadLocalUser();
+    loadCreditsFromBackend();
+    try {
+      const parentHref = parent && parent.location && parent.location.href ? String(parent.location.href) : '';
+      if (parentHref.includes('MeetingRoomList')) setActiveNav('browse');
+      else if (parentHref.includes('MyBookings')) setActiveNav('mybookings');
+    } catch (e) {}
+    post({ type: 'hamburger-ready' });
+    setupOutsideClickToClose();
+  })();
+
+})();
+</script>
+</body>
+</html>
