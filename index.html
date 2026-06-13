@@ -4,15 +4,15 @@
   <meta charset="utf-8" />
  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Beginest Portal</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="images/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <style>
     :root{ --accent:#0b2746; }
-    body{ margin:0; font-family: system-ui, Roboto; background: url('Background.jpg') no-repeat center center fixed; overflow: hidden;}
+    body{ margin:0; font-family: system-ui, Roboto; background: url('images/Background.jpg') no-repeat center center fixed; overflow: hidden;}
     header{ background:var(--accent); color:#fff; padding:14px 20px; }
     .logo-img{ height:44px; margin-right:12px; border-radius:6px; }
     .brand{ font-weight:700; }
@@ -29,7 +29,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      background: url('Background.jpg') no-repeat center center fixed;
+      background: url('images/Background.jpg') no-repeat center center fixed;
       z-index:9999;
       visibility:hidden;
       opacity:0;
@@ -52,7 +52,7 @@
   <header id="topHeader">
     <div class="d-flex justify-content-between align-items-center">
       <div class="d-flex align-items-center">
-        <img src="1682591259288.jpeg" class="logo-img" alt="logo" onerror="this.style.display='none'">
+        <img src="images/1682591259288.jpeg" class="logo-img" alt="logo" onerror="this.style.display='none'">
         <div>
           <div class="brand">Beginest Meeting Rooms</div>
           <div class="small">Book meeting rooms in your harbor</div>
@@ -124,7 +124,7 @@
       if (mainFrame) mainFrame.style.height = 'calc(100vh - 72px)';
       logoutBtn.style.display = 'none';
       // navigate to register page
-      loadPage('register.html');
+      loadPage('pages/register.html');
     }
 
     function setTS(){
@@ -142,7 +142,7 @@
       const w = localStorage.getItem(whatsappKey);
       if (!w) {
         // not logged in -> direct to register
-        loadPage('register.html');
+        loadPage('pages/register.html');
         return;
       }
 
@@ -171,7 +171,7 @@
             showCustomer(resp.customer);
             logoutBtn.style.display = 'inline-block';
             // load meeting room list into iframe
-            loadPage('MeetingRoomLandingPage.html');
+            loadPage('pages/MeetingRoomLandingPage.html');
           } else {
             // not a customer (or no data) -> force register
             clearAuth();
@@ -181,7 +181,7 @@
           // network or other error: best effort - still navigate to meeting room list so user can retry login/register
           console.error('Failed to fetch customer details:', err);
           // fallback: go to register page (you can change to MeetingRoomList if you prefer)
-          loadPage('register.html');
+          loadPage('pages/register.html');
         })
         .finally(() => {
           showSpinner(false);
@@ -197,17 +197,17 @@
     window.addEventListener('message', function(event) {
       const data = event.data || {};
       if (data.action === 'gotoRooms') {
-        loadPage('MeetingRoomLandingPage.html');
+        loadPage('pages/MeetingRoomLandingPage.html');
       }
       if (data.action === 'gotoLanding' && data.room) {
-        const url = 'MeetingRoomLandingPage.html?room=' + encodeURIComponent(data.room) + '&harbor=' + encodeURIComponent(data.harbor || '');
+        const url = 'pages/MeetingRoomLandingPage.html?room=' + encodeURIComponent(data.room) + '&harbor=' + encodeURIComponent(data.harbor || '');
         loadPage(url);
       }
       if (data.action === 'gotoRegister' || data.action === 'hamburger-logout') {
         clearAuth();
       }
       if (data.action === 'gotoMyBookings') {
-        loadPage('MyBookings.html');
+        loadPage('pages/MyBookings.html');
       }
       if (data.action === 'loginSuccess' && data.customer) {
         // login just happened inside iframe — set timestamp, show header & logout

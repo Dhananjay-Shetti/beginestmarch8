@@ -6,10 +6,13 @@
   <title>Meeting Room — Book</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <style>
     :root{ --accent:#0b2746; --muted:#6c757d; --bg:#f6f7f9; --hamburger-width: 252px; --content-max-width: 980px;}
-    html,body{ height:100%; margin:0; font-family: system-ui, Roboto; background:url('Background.jpg') no-repeat center center fixed; color:#0b2746; }
-    /* .app-wrap{ display:flex; min-height:100vh; } */
+    html,body{ margin:0; font-family: system-ui, Roboto; background:url('../images/Background.jpg') no-repeat center center fixed; color:#0b2746; }
+    body{ min-height:100vh; display:flex; flex-direction:column; }
+    .app-wrap{ display:flex; flex-direction:column; flex:1; }
     /* Sidebar */
     .sidebar{ width:260px; background:#fff; border-right:1px solid #eef2f7; padding:28px 20px; box-shadow: 0 0 0 1px rgba(0,0,0,0.00); }
     .logo-sm{ height:42px; display:block; margin-bottom:18px; }
@@ -156,24 +159,26 @@
     /* .logo-wrap { width: 140px; height:56px; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; } */
     .logo-img { width:100%; height:100%; object-fit:cover; display:block; border-radius:8px; }
     @media (min-width: 900px) {
+      .app-wrap { min-height: 100%; }
         /* .container-main {
     width: 70vw;
-    max-width: 980px; 
+    max-width: 980px;
     margin-left: auto;
     margin-right: auto;
     box-sizing: border-box;
   } */
      /* .container-main {
-    width: calc(100% - 360px); 
+    width: calc(100% - 360px);
     max-width: 980px;
-    margin-left: 360px;      
+    margin-left: 360px;
     margin-right: auto;
   } */
   .container-main {
-    /* outline: 2px dashed red; */
+    flex: 0 0 auto;
     width: 100%;
     max-width: var(--content-max-width);
-
+    margin-top: auto;
+    margin-bottom: auto;
     margin-left: calc(
       var(--hamburger-width) +
       (100vw - var(--hamburger-width) - var(--content-max-width)) / 2
@@ -230,6 +235,52 @@
       opacity: .6;
     pointer-events: none;
     } */
+
+  /* ── Flatpickr — minimal, native-feeling theme ─────── */
+  .flatpickr-calendar {
+    font-family: system-ui, Roboto, sans-serif;
+    font-size: 0.875rem;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+  }
+  .flatpickr-months { background: #f6f8fa; border-radius: 6px 6px 0 0; border-bottom: 1px solid #e2e8f0; }
+  .flatpickr-months .flatpickr-month { color: #24292f; fill: #24292f; height: 40px; }
+  .flatpickr-months .flatpickr-prev-month,
+  .flatpickr-months .flatpickr-next-month { fill: #57606a; }
+  .flatpickr-months .flatpickr-prev-month:hover svg,
+  .flatpickr-months .flatpickr-next-month:hover svg { fill: #0b2746; }
+  .flatpickr-current-month { color: #24292f; font-weight: 600; font-size: 0.95rem; }
+  .flatpickr-current-month input.cur-year { color: #24292f; }
+  .flatpickr-current-month .flatpickr-monthDropdown-months { background: #f6f8fa; color: #24292f; }
+  .flatpickr-weekdays { background: #fff; border-bottom: 1px solid #f0f0f0; }
+  span.flatpickr-weekday { background: #fff; color: #57606a; font-weight: 600; font-size: 0.78rem; }
+  .flatpickr-day { border-radius: 4px; color: #24292f; }
+  .flatpickr-day:hover { background: #f0f6ff; border-color: #f0f6ff; }
+  .flatpickr-day.selected, .flatpickr-day.selected:hover { background: #0b2746; border-color: #0b2746; color: #fff; }
+  .flatpickr-day.today { border-color: #0b2746; }
+  .flatpickr-day.today:hover { background: #f0f6ff; }
+  .flatpickr-day.flatpickr-disabled,
+  .flatpickr-day.flatpickr-disabled:hover {
+    color: #c8c8c8 !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    cursor: not-allowed;
+    text-decoration: line-through;
+  }
+  .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay { color: #d0d7de; }
+  /* Override Bootstrap's grey-readonly style on the visible altInput */
+  .flatpickr-input.form-control,
+  .flatpickr-input.form-control[readonly],
+  .flatpickr-alt-input,
+  .flatpickr-alt-input[readonly],
+  #meetingDate ~ input[readonly] {
+    background-color: #fff !important;
+    cursor: pointer;
+    color: #495057;
+    opacity: 1;
+  }
+  /* ───────────────────────────────────────────────────── */
   </style>
 </head>
 <body>
@@ -237,7 +288,7 @@
   <!-- Hamburger Menu Integration -->
   <div id="hamburgerOpener" aria-label="Open menu">
         <div class="logo-wrap" style="width: 56px;">
-          <img src="favicon.png" class="logo-img" alt="logo" onerror="this.style.display='none'">
+          <img src="../images/favicon.png" class="logo-img" alt="logo" onerror="this.style.display='none'">
         </div>
   </div>
 
@@ -269,7 +320,7 @@
 
         <div class="form-group date-wrapper">
           <label>Date:</label>
-          <input id="meetingDate" type="date" class="form-control"/>
+          <input id="meetingDate" type="date" class="form-control" placeholder="Select a date"/>
         </div>
 
         <div class="form-row mt-2" id="timeHolder">
@@ -448,7 +499,15 @@
 
     // Prevent weekend selection and disable past dates
     const todayStr = (new Date()).toISOString().split('T')[0];
-    meetingDateEl.min = todayStr;
+    flatpickr(meetingDateEl, {
+      dateFormat: "Y-m-d",        // internal value stays YYYY-MM-DD (what the API expects)
+      altInput: true,             // show a friendlier format to the user
+      altFormat: "d M Y",        // e.g. "15 Jun 2026"
+      altInputClass: "form-control",
+      minDate: "today",
+      locale: { firstDayOfWeek: 1 }, // Mon–Sun week so disabled Sundays sit at the end
+      disable: [function(date) { return date.getDay() === 0; }]
+    });
 meetingDateEl.addEventListener('change', () => {
   const v = meetingDateEl.value;
   if (!v) return;
@@ -458,10 +517,14 @@ meetingDateEl.addEventListener('change', () => {
     const day = d.getDay(); // 0 = Sun, 6 = Sat
 
     if (day === 0) {
-      showMsg('Sunday is not selectable. Please choose a weekday.', 'warning');
-      meetingDateEl.value = '';
-      startTimeEl.innerHTML = '';
-      endTimeEl.innerHTML = '';
+      const nextMonday = new Date(v + 'T00:00:00');
+      nextMonday.setDate(nextMonday.getDate() + 1);
+      meetingDateEl.value = nextMonday.toISOString().split('T')[0];
+      clearMsg();
+      if (prefMode) populateSlotsPrefMode(meetingDateEl.value);
+      else populateSlotsForRoom(meetingDateEl.value);
+      maybeToggleGetRoomsButton();
+      maybeToggleConfirmButton();
       return;
     }
 
@@ -569,50 +632,9 @@ meetingDateEl.addEventListener('change', () => {
       // compute candidate ends: those > start and <= latestEnd
       const candidates = endOptions.filter(opt => opt.value && opt.value > start && opt.value <= latestEnd);
 
-      // If not in prefMode (single room), decide availability from currentBookedSlots
-      prefMode = false;
-      if (!prefMode) {
-        candidates.forEach(opt => {
-          // hide options outside allowed range
-          if (opt.value <= start || opt.value > latestEnd) {
-            opt.node.disabled = true;
-            opt.node.hidden = true;
-            return;
-          }
-          // determine if the requested interval [start,opt.value) conflicts with booked slots
-          const conflict = intervalConflictsWithBookedSlots(currentBookedSlots || [], start, opt.value);
-          // disable/hide only if conflict; if opt equals first booked boundary (i.e. no conflict) it remains enabled
-          opt.node.disabled = !!conflict;
-          opt.node.hidden = !!conflict;
-        });
-        // ensure any options outside candidate list are hidden
-        endOptions.forEach(opt => {
-          if (!opt.value) {
-            //console.log("value empty : " + opt.value);
-            return;
-          }
-          //console.log("latest end : " + latestEnd);
-          if (opt.value <= start || opt.value > latestEnd) { 
-            opt.node.disabled = true; 
-            opt.node.hidden = true; 
-            //console.log("end value : " + opt.value + " : " + opt.wasUnavail + " : " + opt.node.disabled + " : " + opt.node.hidden);
-          }
-        });
-        // if selected end becomes invalid, clear it
-        if (endTimeEl.value) {
-          const sel = Array.from(endTimeEl.options).find(o => o.value === endTimeEl.value);
-          if (!sel || sel.disabled || sel.hidden) endTimeEl.value = '';
-        }
-        maybeToggleGetRoomsButton();
-        maybeToggleConfirmButton();
-        return;
-      }
-
-      // prefMode: we need to check server-side whether any room is available for each candidate end.
-      // Build CSV of candidates (client will request server once).
+      // Check server-side whether any room is available for each candidate end time
       const endsCSV = candidates.map(c => c.value).join(',');
       if (!endsCSV) {
-        // no candidate ends — hide all end options
         endOptions.forEach(opt => {
           if (!opt.value) return;
           opt.node.disabled = true; opt.node.hidden = true;
@@ -621,22 +643,10 @@ meetingDateEl.addEventListener('change', () => {
         maybeToggleGetRoomsButton();
         maybeToggleConfirmButton();
         return;
-       }
-       // else {
-      //   latestEnd = addMinutesToTime(start, MAX_DURATION_HOURS * 60);
-      //   endOptions.forEach(opt => {
-      //       if (!opt.value) return;
-      //       if (opt.value <= start || opt.value > latestEnd) {
-      //         opt.node.disabled = true; opt.node.hidden = true;
-      //       } 
-      //     });
-      // }
-      
-      // Call new batch endpoint to check all candidate ends in one request
+      }
+
       showSpinner(true);
-       if(prefMode){
-        document.getElementById('noRoom').style.display = 'none';
-       }
+      document.getElementById('noRoom').style.display = 'none';
       const params = `action=checkEndCandidates&harbor=${encodeURIComponent(harborParam)}&date=${encodeURIComponent(meetingDateEl.value)}&start=${encodeURIComponent(start)}&ends=${encodeURIComponent(endsCSV)}`;
       fetch(`${scriptUrl}?${params}`)
         .then(r => r.json())
@@ -651,7 +661,7 @@ meetingDateEl.addEventListener('change', () => {
               const ok = !!map[opt.value]; // server says if at least one room exists for start->end
               opt.node.disabled = !ok;
               opt.node.hidden = !ok;
-              if(prefMode && !ok){
+              if(!ok){
                 document.getElementById('noRoom').style.display = 'inline';
               }
             }
@@ -718,7 +728,7 @@ meetingDateEl.addEventListener('change', () => {
               if (isToday && (h < now.getHours() || (h === now.getHours() && m < startMin))) continue;
               const v = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
               const d = new Date(); d.setHours(h,m,0,0);
-              const txt = d.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
+              const txt = d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12: true });
 
               // create option for start select
               const o = document.createElement('option');
@@ -827,7 +837,7 @@ meetingDateEl.addEventListener('change', () => {
       if (isToday && (h < now.getHours() || (h === now.getHours() && m < startMin))) continue;
       const v = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
       const d = new Date(); d.setHours(h, m, 0, 0);
-      const txt = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      const txt = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
       const o = document.createElement('option');
       o.value = v;
@@ -888,7 +898,7 @@ meetingDateEl.addEventListener('change', () => {
             noOfPeople = findRoomCapacity(room.people);
             // image: try provided url, if fails fallback to placeholder
             if (room.imageUrl) {
-              roomImg.src = room.imageUrl;
+              roomImg.src = room.imageUrl.startsWith('http') ? room.imageUrl : '../images/' + room.imageUrl;
             } else {
               roomImg.src = 'https://placehold.co/1200x600?text=Meeting+Room';
             }
@@ -1059,7 +1069,7 @@ meetingDateEl.addEventListener('change', () => {
             const capacity = findRoomCapacity(rm.people);
             const needs = (capacity * 0.5) * 2;
 
-            card.innerHTML = `<img src="${rm.imageUrl || 'https://placehold.co/400x200?text=Room'}" class="room-img"><div class="card-body"><h5 class="room-title mb-1">${rm.MeetingRoom}</h5><div class="meta-line">${rm.floor || ''} • ${rm.people || ''}</div><p class="small text-muted">${rm.description || ''}</p><div class="amenities"></div><button class="book-btn btn-sm">Book Now</button><p class="small" style="color: red;text-align: center; margin: 20px 0px 0px 0px;">Needs ${needs} tokens per hour</p></div>`;
+            card.innerHTML = `<img src="${rm.imageUrl ? (rm.imageUrl.startsWith('http') ? rm.imageUrl : '../images/' + rm.imageUrl) : 'https://placehold.co/400x200?text=Room'}" class="room-img"><div class="card-body"><h5 class="room-title mb-1">${rm.MeetingRoom}</h5><div class="meta-line">${rm.floor || ''} • ${rm.people || ''}</div><p class="small text-muted">${rm.description || ''}</p><div class="amenities"></div><button class="book-btn btn-sm">Book Now</button><p class="small" style="color: red;text-align: center; margin: 20px 0px 0px 0px;">Needs ${needs} tokens per hour</p></div>`;
             const amenDiv = card.querySelector('.amenities');
             mapping.forEach(m => { if (rm.amenities && rm.amenities[m.key]) { const s = document.createElement('span'); s.className = 'amenity-pill'; s.innerHTML = `<i class="fas ${m.icon}"></i> ${m.label}`; amenDiv.appendChild(s); } });
             const btn = card.querySelector('.book-btn');

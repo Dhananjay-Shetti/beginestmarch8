@@ -90,7 +90,7 @@
   <!-- Hamburger Menu Integration -->
   <div id="hamburgerOpener" aria-label="Open menu">
         <div class="logo-wrap" style="width: 56px;">
-          <img src="favicon.png" class="logo-img" alt="logo" onerror="this.style.display='none'">
+          <img src="../images/favicon.png" class="logo-img" alt="logo" onerror="this.style.display='none'">
         </div>
   </div>
 
@@ -226,7 +226,7 @@
 
       rooms.forEach(r => {
         const node = tpl.content.cloneNode(true);
-        node.querySelector('.room-img').src = r.imageUrl || 'https://placehold.co/600x360?text=Room';
+        node.querySelector('.room-img').src = r.imageUrl ? (r.imageUrl.startsWith('http') ? r.imageUrl : '../images/' + r.imageUrl) : 'https://placehold.co/600x360?text=Room';
         node.querySelector('.room-title').innerText = r.MeetingRoom;
         node.querySelector('.floor').innerText = r.floor || '';
         node.querySelector('.people').innerText = r.people || '';

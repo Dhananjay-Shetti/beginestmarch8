@@ -82,7 +82,7 @@
   nav.nav { margin-top:20px 10px; }
   .nav-item {
     display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px; color:#324151;
-    text-decoration:none; cursor:pointer; margin-bottom:8px; user-select:none;
+    text-decoration:none; cursor:pointer; margin-bottom:8px; user-select:none; white-space:nowrap;
   }
   .nav-item:hover { background: #f4f7fb; }
   .nav-item.active { background:var(--accent); color:#fff !important; font-weight:600; }
@@ -161,7 +161,7 @@
       <!-- logo/brand (image markup as you requested) -->
       <div class="brand" id="brandRoot" title="">
         <div class="logo-wrap">
-          <img src="1682591259288.jpeg" class="logo-img" alt="logo" onerror="this.style.display='none'">
+          <img src="../images/1682591259288.jpeg" class="logo-img" alt="logo" onerror="this.style.display='none'">
         </div>
       </div>
 
@@ -224,15 +224,15 @@
   const scriptUrl = "https://script.google.com/macros/s/AKfycbwe8AIxQwxnOVs-aMZPTeO5seoJC-b_CUiMfN_Ad40sZipUYvc9dyVMbzYZbTtYyJgG/exec";
 
   const HARBOR_TIMINGS = {
-    "H1": { code: "H1", title: "Harbor H1", hoursText: "Mon–Fri: 09:00 – 22:00\nSat: 09:00 – 18:00" },
+    "H1": { code: "H1", title: "Harbor H1", hoursText: "Mon–Sat: 9AM – 10PM" },
     "H2": { code: "H2", title: "Harbor H2", hoursText: "Open 24 / 7" },
-    "H3": { code: "H3", title: "Harbor H3", hoursText: "Mon–Fri: 08:00 – 20:00\nSat: 09:00 – 14:00" },
-    "H4": { code: "H4", title: "Harbor H4", hoursText: "Mon–Fri: 09:00 – 21:00\nSat: 09:00 – 18:00" },
-    "H5": { code: "H5", title: "Harbor H5", hoursText: "Mon–Fri: 09:00 – 22:00\nSat: 09:00 – 22:00" },
-    "H6": { code: "H6", title: "Harbor H6", hoursText: "Mon–Fri: 10:00 – 20:00\nSat: 10:00 – 18:00" },
-    "H7": { code: "H7", title: "Harbor H7", hoursText: "Mon–Fri: 07:00 – 19:00\nSat: 08:00 – 14:00" },
-    "H8": { code: "H8", title: "Harbor H8", hoursText: "Mon–Fri: 09:30 – 18:30\nSat: 09:30 – 12:30" },
-    "H9": { code: "H9", title: "Harbor H9", hoursText: "Mon–Fri: 09:00 – 21:00\nSat: 09:00 – 18:00" }
+    "H3": { code: "H3", title: "Harbor H3", hoursText: "Mon–Sat: 8AM – 8PM" },
+    "H4": { code: "H4", title: "Harbor H4", hoursText: "Mon–Sat: 9AM – 9PM" },
+    "H5": { code: "H5", title: "Harbor H5", hoursText: "Mon–Sat: 9AM – 10PM" },
+    "H6": { code: "H6", title: "Harbor H6", hoursText: "Mon–Sat: 10AM – 8PM" },
+    "H7": { code: "H7", title: "Harbor H7", hoursText: "Mon–Sat: 7AM – 7PM" },
+    "H8": { code: "H8", title: "Harbor H8", hoursText: "Mon–Sat: 9:30AM – 6:30PM" },
+    "H9": { code: "H9", title: "Harbor H9", hoursText: "Mon–Sat: 9AM – 9PM" }
   };
 
   const drawer = document.getElementById('drawer');
